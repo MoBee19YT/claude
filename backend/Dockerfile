@@ -13,4 +13,7 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Shell form (not --reload) so $PORT is respected on hosts like Render that
+# assign it dynamically, falling back to 8000 for local/Docker Compose use.
+# Local dev hot-reload is added via docker-compose.yml's command override.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

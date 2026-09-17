@@ -159,6 +159,55 @@ cd backend
 python -m scripts.import_osm
 ```
 
+## Deploying to production (GitHub Pages + Render)
+
+GitHub Pages only serves static files, so it can host the **frontend**
+(it's just HTML/JS/CSS after `vite build`) but not the **backend** (it
+needs a running process and a real PostgreSQL/PostGIS database). Split
+them: frontend on GitHub Pages, backend + database on
+[Render](https://render.com) (a Docker host, using the same
+`backend/Dockerfile` already in this repo). Any other Docker + Postgres
+host - Railway, Fly.io, a VPS - works the same way; swap step 2.
+
+**1. Deploy the backend to Render**
+
+- On render.com: **New +** → **Blueprint** → connect this repo → it reads
+  `render.yaml` and provisions a web service + a PostgreSQL database.
+- After it deploys, open a **Shell** on the `parking-db` database (or
+  connect with `psql` using the External Connection String from its
+  dashboard page) and run the schema once:
+  ```bash
+  psql "<external-connection-string>" -f backend/db/init.sql
+  ```
+- Note the backend's public URL, e.g. `https://parking-backend-xxxx.onrender.com`.
+- In the `parking-backend` service's environment settings, set
+  `CORS_ORIGINS` to your future GitHub Pages URL, e.g.
+  `https://your-username.github.io`.
+- (Optional) set `TOMTOM_API_KEY` / `HERE_API_KEY` there too - `render.yaml`
+  leaves them blank on purpose so you paste real keys only in Render's
+  dashboard, never in the repo.
+- Free-tier notes: the web service spins down after ~15 min idle (first
+  request after that takes ~30-60s to wake up) and the free database
+  expires after 90 days - fine for trying this out, upgrade the plans in
+  `render.yaml` for anything real.
+
+**2. Point the frontend at it and deploy to GitHub Pages**
+
+- Repo **Settings → Pages → Source**: select **GitHub Actions**.
+- Repo **Settings → Secrets and variables → Actions → Variables**: add
+  `VITE_API_BASE_URL` = `https://parking-backend-xxxx.onrender.com/api/v1`
+  (the URL from step 1, with `/api/v1` on the end).
+- Push to `main` (the included `.github/workflows/deploy-pages.yml`
+  builds `frontend/` and deploys it automatically; it also currently
+  triggers on `claude/parking-discovery-mvp-dxxfla` so you can verify the
+  deploy before merging - trim that once you have).
+- Your app is then live at `https://your-username.github.io/claude/`.
+
+That's the whole loop: the GitHub Pages site is a static bundle that
+calls the Render backend's `/api/v1/*` endpoints over HTTPS, exactly like
+it calls `localhost:8000` in local dev - only `VITE_API_BASE_URL`
+changes between the two.
+
 ## Expanding beyond Prague
 
 Nothing in the code is Prague-specific - it's just the default bounding

@@ -8,14 +8,27 @@ is ever hardcoded - see backend/.env.example for what can be configured.
 from functools import lru_cache
 from typing import List, Optional
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    # Database
+    # Database. Hosted providers (Render, Railway, Heroku-style DATABASE_URL
+    # env vars) typically inject a bare "postgresql://" URL - normalized to
+    # the asyncpg driver SQLAlchemy needs, so no manual edits are required
+    # after pasting a provider's connection string in as-is.
     database_url: str = "postgresql+asyncpg://parking:parking@localhost:5432/parking"
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_asyncpg_driver(cls, v: str) -> str:
+        if v.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + v[len("postgresql://") :]
+        if v.startswith("postgres://"):  # some providers use the short scheme
+            return "postgresql+asyncpg://" + v[len("postgres://") :]
+        return v
 
     # Default region (Prague) - only used to seed the import script and as
     # the map's initial viewport. Nothing in the data model is Prague-specific.
