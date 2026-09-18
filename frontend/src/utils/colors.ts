@@ -18,14 +18,17 @@ export type ParkingStatus =
   | "free"
   | "unknown";
 
+/** Deliberately restrained: the map itself is kept near-white, so these read
+ * clearly as the only saturated thing on screen without the page feeling
+ * neon. Deeper 600-level tones rather than bright 500s. */
 export const STATUS_COLOR: Record<ParkingStatus, string> = {
-  no: "#ef4444",
+  no: "#dc2626",
   private: "#64748b",
-  resident: "#a855f7",
-  restricted: "#f97316",
-  paid: "#3b82f6",
-  free: "#10b981",
-  unknown: "#eab308",
+  resident: "#7c3aed",
+  restricted: "#ea580c",
+  paid: "#2563eb",
+  free: "#059669",
+  unknown: "#ca8a04",
 };
 
 /** Matches the glyph drawn on the map markers (see Map/markerImages.ts), so

@@ -28,7 +28,11 @@ from shapely.geometry import LineString, Polygon
 from app.config import get_settings
 from app.providers.base import NormalizedParking, ParkingProvider
 
-OVERPASS_TIMEOUT = 90
+# Overpass is asked to give up server-side at this many seconds, and the HTTP
+# client waits only slightly longer. Kept modest because these fetches run as
+# background cache warming - a slow one should be abandoned and retried later,
+# not left holding a worker.
+OVERPASS_TIMEOUT = 25
 
 
 def build_overpass_query(min_lon: float, min_lat: float, max_lon: float, max_lat: float) -> str:
@@ -249,6 +253,37 @@ def _parse_street_parking(tags: dict[str, str]) -> Optional[dict[str, Any]]:
         "covered": False,
         "name": tags.get("name"),
     }
+
+
+_NO_PARKING_LANE_VALUES = {"no", "none", "separate"}
+
+
+def street_side_from_tags(tags: dict[str, str]) -> Optional[str]:
+    """Which side(s) of the road an on-street segment allows parking on.
+
+    Derived from the stored OSM tags rather than a dedicated column, so the
+    map can draw parking bays on the correct side of the street without a
+    schema change. Returns "left", "right", "both" or None if unknown.
+    Sides are relative to the direction of the way, which is also how
+    MapLibre's line-offset works.
+    """
+    if not tags:
+        return None
+
+    def has(*keys: str) -> bool:
+        return any(tags.get(k) and tags[k] not in _NO_PARKING_LANE_VALUES for k in keys)
+
+    if has("parking:lane:both", "parking:both"):
+        return "both"
+    left = has("parking:lane:left", "parking:left")
+    right = has("parking:lane:right", "parking:right")
+    if left and right:
+        return "both"
+    if left:
+        return "left"
+    if right:
+        return "right"
+    return None
 
 
 def normalize_element(element: dict, default_city: str, default_country: str) -> Optional[NormalizedParking]:

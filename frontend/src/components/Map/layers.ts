@@ -30,8 +30,8 @@ export const CLUSTER_LAYER_ID = "parking-clusters";
 export const CLUSTER_COUNT_LAYER_ID = "parking-cluster-count";
 export const POLYGON_FILL_LAYER_ID = "parking-polygons";
 export const POLYGON_OUTLINE_LAYER_ID = "parking-polygons-outline";
-export const LINE_CASING_LAYER_ID = "parking-lines-casing";
 export const LINE_LAYER_ID = "parking-lines";
+export const LINE_SECOND_SIDE_LAYER_ID = "parking-lines-second-side";
 export const SELECTED_PULSE_LAYER_ID = "parking-selected-pulse";
 export const MARKER_LAYER_ID = "parking-markers";
 export const OVERVIEW_MARKER_LAYER_ID = "parking-overview-markers";
@@ -76,6 +76,48 @@ export const PARKING_ICON_EXPRESSION = statusCases((status) =>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   iconIdForStatus(status as any),
 );
+
+/**
+ * On-street parking is drawn as a row of bays alongside the road rather than
+ * a line down the middle of it. `line-offset` is positive to the right of the
+ * way's direction, which is the same convention OSM's left/right tags use, so
+ * the bays land on the side the data actually says. Unknown side stays on the
+ * centreline rather than guessing.
+ */
+const sideOffset = (magnitude: number): ExpressionSpecification =>
+  [
+    "match",
+    ["to-string", ["get", "street_side"]],
+    "left",
+    -magnitude,
+    ["right", "both"],
+    magnitude,
+    0, // side unknown - sit on the centreline rather than claiming a side
+  ] as ExpressionSpecification;
+
+export const STREET_OFFSET_EXPRESSION: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  13,
+  sideOffset(2),
+  18,
+  sideOffset(9),
+];
+
+export const STREET_OFFSET_MIRRORED_EXPRESSION: ExpressionSpecification = [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  13,
+  -2,
+  18,
+  -9,
+];
+
+/** Chunky dashes read as individual parking bays. Units are multiples of
+ * line-width, and `line-cap: butt` keeps the ends square. */
+export const STREET_BAY_DASHARRAY = [1.1, 0.7];
 
 export const NOT_CLUSTER_FILTER: ExpressionSpecification = ["!", ["has", "point_count"]];
 export const IS_POLYGON: ExpressionSpecification = ["==", ["geometry-type"], "Polygon"];

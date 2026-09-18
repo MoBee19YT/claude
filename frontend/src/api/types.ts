@@ -21,6 +21,8 @@ export interface ParkingProperties {
 
   parking_type: ParkingType;
   access: AccessType | null;
+  /** On-street parking only: which side(s) of the road the bays are on. */
+  street_side: "left" | "right" | "both" | null;
 
   fee: boolean | null;
   price: number | null;

@@ -18,8 +18,8 @@ import {
   IS_LINE,
   IS_POLYGON,
   LABEL_LAYER_ID,
-  LINE_CASING_LAYER_ID,
   LINE_LAYER_ID,
+  LINE_SECOND_SIDE_LAYER_ID,
   MARKER_LAYER_ID,
   NOT_CLUSTER_FILTER,
   OVERVIEW_MARKER_LAYER_ID,
@@ -31,6 +31,9 @@ import {
   POLYGON_FILL_LAYER_ID,
   POLYGON_OUTLINE_LAYER_ID,
   SELECTED_PULSE_LAYER_ID,
+  STREET_BAY_DASHARRAY,
+  STREET_OFFSET_EXPRESSION,
+  STREET_OFFSET_MIRRORED_EXPRESSION,
   WORLD_POLYGON,
 } from "./layers";
 import { ACCESSIBLE_BADGE_ICON, EV_BADGE_ICON, registerMarkerImages } from "./markerImages";
@@ -134,7 +137,7 @@ export function ParkingMap({ onLoadingChange, onErrorChange, onMetaChange }: Par
           id: BASEMAP_WASH_LAYER_ID,
           type: "fill",
           source: BASEMAP_WASH_SOURCE_ID,
-          paint: { "fill-color": "#f8fafc", "fill-opacity": 0.55 },
+          paint: { "fill-color": "#ffffff", "fill-opacity": 0.74 },
         },
         firstSymbolLayer,
       );
@@ -162,7 +165,7 @@ export function ParkingMap({ onLoadingChange, onErrorChange, onMetaChange }: Par
         source: PARKING_SOURCE_ID,
         minzoom: CLUSTER_SWITCH_ZOOM,
         filter: IS_POLYGON,
-        paint: { "fill-color": PARKING_COLOR_EXPRESSION, "fill-opacity": 0.42 },
+        paint: { "fill-color": PARKING_COLOR_EXPRESSION, "fill-opacity": 0.2 },
       });
       map.addLayer({
         id: POLYGON_OUTLINE_LAYER_ID,
@@ -177,30 +180,34 @@ export function ParkingMap({ onLoadingChange, onErrorChange, onMetaChange }: Par
         },
       });
 
-      // --- on-street segments (white casing + colored core) ---------------
-      map.addLayer({
-        id: LINE_CASING_LAYER_ID,
-        type: "line",
-        source: PARKING_SOURCE_ID,
-        minzoom: CLUSTER_SWITCH_ZOOM,
-        filter: IS_LINE,
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": "#ffffff",
-          "line-width": ["interpolate", ["linear"], ["zoom"], 13, 5, 18, 12],
-          "line-opacity": 0.9,
-        },
-      });
+      // --- on-street parking, drawn as bays alongside the road ------------
       map.addLayer({
         id: LINE_LAYER_ID,
         type: "line",
         source: PARKING_SOURCE_ID,
         minzoom: CLUSTER_SWITCH_ZOOM,
         filter: IS_LINE,
-        layout: { "line-cap": "round", "line-join": "round" },
+        layout: { "line-cap": "butt", "line-join": "round" },
         paint: {
           "line-color": PARKING_COLOR_EXPRESSION,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 13, 3, 18, 8],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 13, 3, 18, 9],
+          "line-offset": STREET_OFFSET_EXPRESSION,
+          "line-dasharray": STREET_BAY_DASHARRAY,
+        },
+      });
+      // Streets tagged as having parking on both sides get a mirrored row.
+      map.addLayer({
+        id: LINE_SECOND_SIDE_LAYER_ID,
+        type: "line",
+        source: PARKING_SOURCE_ID,
+        minzoom: CLUSTER_SWITCH_ZOOM,
+        filter: ["all", IS_LINE, ["==", ["get", "street_side"], "both"]],
+        layout: { "line-cap": "butt", "line-join": "round" },
+        paint: {
+          "line-color": PARKING_COLOR_EXPRESSION,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 13, 3, 18, 9],
+          "line-offset": STREET_OFFSET_MIRRORED_EXPRESSION,
+          "line-dasharray": STREET_BAY_DASHARRAY,
         },
       });
 

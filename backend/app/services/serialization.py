@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Optional
 
 from app.models.parking import Parking
+from app.providers.osm_provider import street_side_from_tags
 from app.schemas.parking import ParkingFeature, ParkingProperties
 from app.services.geo_utils import geometry_column_to_geojson, haversine_m, row_centroid_lonlat
 from app.services.opening_hours import is_open_now
@@ -23,6 +24,7 @@ def row_to_feature(row: Parking, ref_point: Optional[tuple[float, float]] = None
         source_ids=row.source_ids or {row.primary_source: row.primary_source_id},
         parking_type=row.parking_type,
         access=row.access,
+        street_side=street_side_from_tags(row.raw_tags or {}) if row.parking_type == "street" else None,
         fee=row.fee,
         price=float(row.price) if row.price is not None else None,
         price_period=row.price_period,

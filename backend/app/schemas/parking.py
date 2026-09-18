@@ -29,6 +29,9 @@ class ParkingProperties(BaseModel):
 
     parking_type: ParkingType
     access: Optional[AccessType] = None
+    street_side: Optional[Literal["left", "right", "both"]] = Field(
+        None, description="For on-street parking: which side(s) of the road, relative to the way direction"
+    )
 
     fee: Optional[bool] = Field(None, description="true=paid, false=free, null=unavailable")
     price: Optional[float] = None

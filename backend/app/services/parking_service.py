@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import time
 from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
@@ -27,6 +28,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.database import AsyncSessionLocal
 from app.models.parking import ImportCell, Parking
 from app.providers.base import NormalizedParking
 from app.providers.registry import get_configured_providers
@@ -36,8 +38,18 @@ from app.services.opening_hours import is_open_now
 logger = logging.getLogger(__name__)
 
 GRID_SIZE_DEG = 0.02  # roughly 1.5-2.2km depending on latitude
-MAX_CELLS_PER_REQUEST = 25  # beyond this, rely on pre-imported data; don't hammer live APIs
+MAX_CELLS_PER_WARM = 6  # beyond this, rely on pre-imported data; don't hammer live APIs
 CACHE_SOURCE_LABEL = "combined"
+
+# Cells whose last warm attempt failed, and when. Overpass rate-limits cloud
+# IPs hard, so without a cooldown a failing cell would be retried on every
+# single request forever. In-memory on purpose: a restart is a fine moment to
+# try again, and this never needs to be shared between workers.
+FAILED_CELL_COOLDOWN_SECONDS = 600
+_failed_cells: dict[tuple[int, int], float] = {}
+# Cells currently being fetched, so concurrent map pans don't start duplicate
+# Overpass calls for the same area.
+_in_flight_cells: set[tuple[int, int]] = set()
 
 
 @dataclass
@@ -127,14 +139,18 @@ def _cell_bbox(cell_x: int, cell_y: int) -> tuple[float, float, float, float]:
     )
 
 
-async def ensure_cached(db: AsyncSession, min_lon: float, min_lat: float, max_lon: float, max_lat: float) -> None:
+async def find_cells_to_warm(
+    db: AsyncSession, min_lon: float, min_lat: float, max_lon: float, max_lat: float
+) -> list[tuple[int, int]]:
+    """Which grid cells covering this bbox still need fetching from the live
+    providers. Cheap, DB-only - safe to call inside a request."""
     settings = get_settings()
     if not settings.osm_live_fallback:
-        return
+        return []
 
     cells = cells_for_bbox(min_lon, min_lat, max_lon, max_lat)
-    if not cells or len(cells) > MAX_CELLS_PER_REQUEST:
-        return
+    if not cells or len(cells) > MAX_CELLS_PER_WARM:
+        return []
 
     xs = {c[0] for c in cells}
     ys = {c[1] for c in cells}
@@ -145,37 +161,69 @@ async def ensure_cached(db: AsyncSession, min_lon: float, min_lat: float, max_lo
             ImportCell.cell_y.in_(ys),
         )
     )
-    existing_set = {(row[0], row[1]) for row in existing.all()}
-    missing = [c for c in cells if c not in existing_set]
-    if not missing:
+    cached = {(row[0], row[1]) for row in existing.all()}
+    now = time.monotonic()
+    return [
+        cell
+        for cell in cells
+        if cell not in cached
+        and cell not in _in_flight_cells
+        and now - _failed_cells.get(cell, 0.0) > FAILED_CELL_COOLDOWN_SECONDS
+    ]
+
+
+async def warm_cells(cells: list[tuple[int, int]]) -> None:
+    """Fetch the given cells from every configured provider and store them.
+
+    Runs as a background task *after* the HTTP response has been sent - an
+    Overpass round trip can take tens of seconds, and blocking the request on
+    it made the map appear to load forever and then fail. The map simply
+    serves whatever is already in PostGIS and picks the new data up on the
+    next pan.
+    """
+    if not cells:
         return
 
     providers = get_configured_providers()
-    for cell_x, cell_y in missing:
-        bbox = _cell_bbox(cell_x, cell_y)
-        records: list[NormalizedParking] = []
-        for provider in providers:
-            try:
-                records.extend(await provider.fetch_bbox(*bbox))
-            except Exception:
-                logger.exception("Provider %s failed for cell (%s,%s)", provider.name, cell_x, cell_y)
-                # Don't mark the cell as cached - we'll retry this provider next time.
-                break
-        else:
+    for cell in cells:
+        if cell in _in_flight_cells:
+            continue
+        _in_flight_cells.add(cell)
+        try:
+            cell_x, cell_y = cell
+            bbox = _cell_bbox(cell_x, cell_y)
+            records: list[NormalizedParking] = []
+            failed = False
+            for provider in providers:
+                try:
+                    records.extend(await provider.fetch_bbox(*bbox))
+                except Exception:
+                    logger.warning("Provider %s failed for cell (%s,%s)", provider.name, cell_x, cell_y)
+                    failed = True
+                    break
+
+            if failed:
+                _failed_cells[cell] = time.monotonic()
+                continue
+
             merged = merge_and_dedupe(records)
-            await upsert_records(db, merged)
-            await db.execute(
-                pg_insert(ImportCell)
-                .values(
-                    cell_x=cell_x,
-                    cell_y=cell_y,
-                    source=CACHE_SOURCE_LABEL,
-                    grid_size=GRID_SIZE_DEG,
-                    feature_count=len(merged),
+            async with AsyncSessionLocal() as db:
+                await upsert_records(db, merged)
+                await db.execute(
+                    pg_insert(ImportCell)
+                    .values(
+                        cell_x=cell_x,
+                        cell_y=cell_y,
+                        source=CACHE_SOURCE_LABEL,
+                        grid_size=GRID_SIZE_DEG,
+                        feature_count=len(merged),
+                    )
+                    .on_conflict_do_nothing()
                 )
-                .on_conflict_do_nothing()
-            )
-    await db.commit()
+                await db.commit()
+            _failed_cells.pop(cell, None)
+        finally:
+            _in_flight_cells.discard(cell)
 
 
 async def upsert_records(db: AsyncSession, records: list[NormalizedParking]) -> int:
@@ -246,8 +294,6 @@ async def get_parking_in_bbox(
     filters: ParkingFilters,
     ref_point: Optional[tuple[float, float]] = None,
 ) -> tuple[list[Parking], bool]:
-    await ensure_cached(db, min_lon, min_lat, max_lon, max_lat)
-
     limit = _limit_for_zoom(zoom)
     needs_python_postfilter = filters.open_now or filters.max_price is not None or filters.max_walk_distance_m is not None
     fetch_limit = limit * 3 if needs_python_postfilter else limit
@@ -271,14 +317,6 @@ async def get_parking_near(
     radius_m: float,
     filters: ParkingFilters,
 ) -> list[Parking]:
-    await ensure_cached(
-        db,
-        lon - radius_m / 111_000,
-        lat - radius_m / 111_000,
-        lon + radius_m / 111_000,
-        lat + radius_m / 111_000,
-    )
-
     point = func.ST_SetSRID(func.ST_MakePoint(lon, lat), 4326)
     stmt = select(Parking).where(
         func.ST_DWithin(
