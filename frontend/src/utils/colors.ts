@@ -19,18 +19,20 @@ export type ParkingStatus =
   | "unknown";
 
 export const STATUS_COLOR: Record<ParkingStatus, string> = {
-  no: "#dc2626",
+  no: "#ef4444",
   private: "#64748b",
-  resident: "#9333ea",
-  restricted: "#ea580c",
-  paid: "#2563eb",
-  free: "#16a34a",
-  unknown: "#ca8a04",
+  resident: "#a855f7",
+  restricted: "#f97316",
+  paid: "#3b82f6",
+  free: "#10b981",
+  unknown: "#eab308",
 };
 
+/** Matches the glyph drawn on the map markers (see Map/markerImages.ts), so
+ * the legend and the map always say the same thing. */
 export const STATUS_ICON: Record<ParkingStatus, string> = {
   no: "✕",
-  private: "P",
+  private: "🔒",
   resident: "R",
   restricted: "!",
   paid: "$",

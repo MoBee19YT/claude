@@ -9,12 +9,15 @@ export function Legend() {
   return (
     <div className="pointer-events-auto">
       {open && (
-        <div className="mb-2 rounded-2xl bg-white/95 backdrop-blur shadow-panel border border-ink-200 p-3 w-56">
-          <div className="space-y-1.5">
+        <div className="mb-2 rounded-2xl bg-white/95 backdrop-blur shadow-panel border border-ink-200 p-3.5 w-60">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">
+            Parking types
+          </div>
+          <div className="space-y-2">
             {ORDER.map((status) => (
-              <div key={status} className="flex items-center gap-2 text-xs text-ink-700">
+              <div key={status} className="flex items-center gap-2.5 text-xs text-ink-700">
                 <span
-                  className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shrink-0"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold text-white shrink-0 ring-2 ring-white shadow-sm"
                   style={{ backgroundColor: STATUS_COLOR[status] }}
                 >
                   {STATUS_ICON[status]}
@@ -22,9 +25,19 @@ export function Legend() {
                 {STATUS_LABEL[status]}
               </div>
             ))}
-            <div className="flex items-center gap-2 text-xs text-ink-700 pt-1 border-t border-ink-100 mt-1.5">
-              <span className="text-xs">⚡ / ♿</span>
-              EV charging / accessible (badge)
+            <div className="flex items-center gap-2.5 text-xs text-ink-700 pt-2 border-t border-ink-100">
+              <span className="flex gap-1 shrink-0">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-park-ev text-white text-[10px] ring-2 ring-white shadow-sm">
+                  ⚡
+                </span>
+              </span>
+              Badge: EV charging
+            </div>
+            <div className="flex items-center gap-2.5 text-xs text-ink-700">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-park-paid text-white text-[10px] ring-2 ring-white shadow-sm shrink-0">
+                ♿
+              </span>
+              Badge: accessible spaces
             </div>
           </div>
         </div>
