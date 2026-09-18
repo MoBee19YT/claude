@@ -208,6 +208,37 @@ calls the Render backend's `/api/v1/*` endpoints over HTTPS, exactly like
 it calls `localhost:8000` in local dev - only `VITE_API_BASE_URL`
 changes between the two.
 
+## Filling the database on a hosted backend (no shell needed)
+
+A fresh deployment has the tables but no parking in them, so the map will
+be empty. `scripts/import_osm.py` is the normal way to fix that, but it
+needs a shell on the server - which Render's free tier doesn't give you.
+So the same import is also exposed as two endpoints you can just open in
+a browser:
+
+1. On your backend host, set an **`ADMIN_TOKEN`** environment variable to
+   any long random string (Render: your service → Environment → Add
+   Environment Variable). Without it, these endpoints refuse everything.
+2. Import a region, a chunk at a time:
+   ```
+   https://YOUR-BACKEND/api/v1/admin/import?token=YOUR_TOKEN
+   ```
+   It returns immediately and fetches in the background. Add
+   `&bbox=min_lon,min_lat,max_lon,max_lat` for somewhere other than
+   `DEFAULT_BBOX`, and `&limit=N` to change how many ~2km cells each call
+   does (default 40).
+3. Watch progress:
+   ```
+   https://YOUR-BACKEND/api/v1/admin/status?token=YOUR_TOKEN
+   ```
+   `parking_facilities` is the row count. Re-run the import URL while the
+   previous response's `remaining_after_this` is above 0.
+
+Each call is deliberately chunked so it finishes well inside a small
+instance's request/idle limits, and cells are fetched one per second to
+stay a good citizen of the public Overpass API. All of Prague is roughly
+300 cells, so expect to press it a handful of times.
+
 ## Expanding beyond Prague
 
 Nothing in the code is Prague-specific - it's just the default bounding

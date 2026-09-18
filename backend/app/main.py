@@ -7,7 +7,7 @@ Interactive API docs are then at http://localhost:8000/docs
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import health, parking, search
+from app.api.routes import admin, health, parking, search
 from app.config import get_settings
 
 settings = get_settings()
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(parking.router, prefix="/api/v1")
 app.include_router(search.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     tomtom_api_key: Optional[str] = None
     here_api_key: Optional[str] = None
 
+    # Enables the /api/v1/admin/* endpoints when set. Left unset the admin
+    # routes refuse every request, so an unprotected deployment can't have
+    # expensive imports triggered by anyone who finds the URL.
+    admin_token: Optional[str] = None
+
     # CORS
     cors_origins: str = "http://localhost:5173"
 

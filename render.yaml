@@ -45,6 +45,11 @@ services:
         value: Prague
       - key: DEFAULT_COUNTRY
         value: Czech Republic
+      # Set a long random value in the Render dashboard to enable the
+      # browser-based importer at /api/v1/admin/import (see README). Left
+      # unset, the admin endpoints refuse every request.
+      - key: ADMIN_TOKEN
+        sync: false
       - key: TOMTOM_API_KEY
         sync: false
       - key: HERE_API_KEY

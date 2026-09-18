@@ -14,6 +14,7 @@ and means an already-empty area is only ever checked once.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import math
@@ -46,6 +47,8 @@ CACHE_SOURCE_LABEL = "combined"
 # single request forever. In-memory on purpose: a restart is a fine moment to
 # try again, and this never needs to be shared between workers.
 FAILED_CELL_COOLDOWN_SECONDS = 600
+# Gap between consecutive Overpass calls during background/bulk warming.
+OVERPASS_POLITENESS_DELAY_SECONDS = 1.0
 _failed_cells: dict[tuple[int, int], float] = {}
 # Cells currently being fetched, so concurrent map pans don't start duplicate
 # Overpass calls for the same area.
@@ -172,6 +175,28 @@ async def find_cells_to_warm(
     ]
 
 
+async def find_uncached_cells(
+    db: AsyncSession, min_lon: float, min_lat: float, max_lon: float, max_lat: float, limit: int
+) -> tuple[list[tuple[int, int]], int]:
+    """Every not-yet-imported cell covering a bbox, for bulk imports.
+
+    Unlike `find_cells_to_warm` this ignores the per-request cap and the
+    failure cooldown - an explicit import is a deliberate act, so it should
+    retry things the passive path has given up on. Returns (cells to do now,
+    total still outstanding) so a caller can show progress.
+    """
+    cells = cells_for_bbox(min_lon, min_lat, max_lon, max_lat)
+    if not cells:
+        return [], 0
+
+    existing = await db.execute(
+        select(ImportCell.cell_x, ImportCell.cell_y).where(ImportCell.source == CACHE_SOURCE_LABEL)
+    )
+    cached = {(row[0], row[1]) for row in existing.all()}
+    outstanding = [c for c in cells if c not in cached and c not in _in_flight_cells]
+    return outstanding[:limit], len(outstanding)
+
+
 async def warm_cells(cells: list[tuple[int, int]]) -> None:
     """Fetch the given cells from every configured provider and store them.
 
@@ -185,9 +210,13 @@ async def warm_cells(cells: list[tuple[int, int]]) -> None:
         return
 
     providers = get_configured_providers()
-    for cell in cells:
+    for index, cell in enumerate(cells):
         if cell in _in_flight_cells:
             continue
+        if index:
+            # Overpass is a donated public service - space out bulk requests
+            # rather than firing a whole city's worth back to back.
+            await asyncio.sleep(OVERPASS_POLITENESS_DELAY_SECONDS)
         _in_flight_cells.add(cell)
         try:
             cell_x, cell_y = cell
