@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>ParkScope — find parking anywhere</title>
+<meta name="description" content="A live map of real parking data from OpenStreetMap: free, paid, resident, EV and accessible spaces." />
+<meta name="theme-color" content="#f7f8fb" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='26' fill='%236366f1'/><text x='50' y='72' font-size='64' font-weight='700' text-anchor='middle' fill='white' font-family='system-ui'>P</text></svg>" />
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+<style>
+/* ===================================================================
+   ParkScope — the entire app is this one file.
+   =================================================================== */
+:root{
+  --bg:#f6f7fb;
+  --ink:#0b1220;
+  --ink-2:#475569;
+  --ink-3:#94a3b8;
+  --line:rgba(15,23,42,.10);
+  --panel:rgba(255,255,255,.82);
+  --panel-solid:#fff;
+  --accent:#6366f1;
+  --accent-2:#8b5cf6;
+  --shadow:0 10px 40px -12px rgba(15,23,42,.28), 0 2px 8px -2px rgba(15,23,42,.10);
+  --shadow-lg:0 24px 70px -20px rgba(15,23,42,.38), 0 4px 12px -4px rgba(15,23,42,.14);
+  --r:18px;
+  --r-lg:26px;
+  --free:#059669; --paid:#2563eb; --resident:#7c3aed; --restricted:#ea580c;
+  --no:#dc2626; --private:#64748b; --unknown:#ca8a04;
+  --ev:#0d9488; --acc:#2563eb;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink);background:var(--bg);overflow:hidden;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+#map{position:absolute;inset:0}
+.maplibregl-ctrl-attrib{font-size:10px;border-radius:10px 0 0 0}
+.maplibregl-ctrl-group{border-radius:14px!important;overflow:hidden;box-shadow:var(--shadow)!important;border:1px solid var(--line)!important}
+
+/* ---------- shared surfaces ---------- */
+.glass{
+  background:var(--panel);
+  backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:var(--shadow);
+}
+.hidden{display:none!important}
+
+/* ---------- top bar ---------- */
+#top{
+  position:absolute;top:calc(14px + var(--safe-t));left:14px;right:14px;z-index:20;
+  display:flex;flex-direction:column;gap:10px;pointer-events:none;
+}
+#topRow{display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+.brand{
+  pointer-events:auto;display:flex;align-items:center;gap:9px;height:52px;padding:0 16px 0 13px;
+  border-radius:var(--r);font-weight:700;letter-spacing:-.02em;white-space:nowrap;flex-shrink:0;
+}
+.brand .dot{
+  width:26px;height:26px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;color:#fff;font-size:15px;font-weight:800;
+  box-shadow:0 4px 14px -3px rgba(99,102,241,.7);
+}
+.searchWrap{position:relative;flex:1;min-width:0;pointer-events:auto}
+#search{
+  width:100%;height:52px;border-radius:var(--r);padding:0 44px 0 46px;outline:none;
+  background:var(--panel);backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.7);box-shadow:var(--shadow);
+  font-size:15px;transition:box-shadow .18s,border-color .18s;
+}
+#search::placeholder{color:var(--ink-3)}
+#search:focus{border-color:rgba(99,102,241,.55);box-shadow:var(--shadow),0 0 0 4px rgba(99,102,241,.14)}
+.searchIcon{position:absolute;left:17px;top:18px;color:var(--ink-3);pointer-events:none}
+#searchClear{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:12px;color:var(--ink-3);display:grid;place-items:center}
+#searchClear:hover{background:rgba(15,23,42,.06);color:var(--ink)}
+#results{
+  position:absolute;top:58px;left:0;right:0;border-radius:var(--r);overflow:hidden;
+  max-height:min(52vh,380px);overflow-y:auto;animation:pop .16s ease-out;
+}
+#results button{display:block;width:100%;text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);transition:background .12s}
+#results button:last-child{border-bottom:0}
+#results button:hover{background:rgba(99,102,241,.08)}
+.rTitle{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rSub{font-size:12px;color:var(--ink-3);text-transform:capitalize;margin-top:1px}
+.iconBtn{
+  pointer-events:auto;width:52px;height:52px;border-radius:var(--r);flex-shrink:0;
+  display:grid;place-items:center;color:var(--ink-2);position:relative;transition:transform .15s,color .15s;
+}
+.iconBtn:hover{color:var(--ink);transform:translateY(-1px)}
+.iconBtn:active{transform:scale(.95)}
+.iconBtn .badge{
+  position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;font-size:11px;font-weight:700;
+  display:grid;place-items:center;box-shadow:0 3px 10px -2px rgba(99,102,241,.8)
+}
+
+/* ---------- filter chips ---------- */
+#filters{
+  display:flex;gap:7px;overflow-x:auto;padding:1px 1px 3px;pointer-events:auto;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+#filters::-webkit-scrollbar{display:none}
+.chip{
+  flex-shrink:0;height:34px;padding:0 14px;border-radius:999px;font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:var(--ink-2);
+  background:var(--panel);backdrop-filter:blur(18px) saturate(180%);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.7);box-shadow:0 4px 14px -6px rgba(15,23,42,.3);
+  transition:transform .14s,background .14s,color .14s,box-shadow .14s;
+}
+.chip:hover{transform:translateY(-1px)}
+.chip:active{transform:scale(.96)}
+.chip.on{
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent;
+  box-shadow:0 6px 18px -6px rgba(99,102,241,.85)
+}
+.chip .swatch{width:8px;height:8px;border-radius:999px;background:currentColor;opacity:.85}
+
+/* ---------- status toast ---------- */
+#toast{
+  position:absolute;top:calc(120px + var(--safe-t));left:50%;transform:translateX(-50%);z-index:19;
+  padding:9px 16px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2);
+  display:flex;align-items:center;gap:9px;animation:pop .2s ease-out;max-width:calc(100vw - 32px);
+}
+#toast.err{color:#b91c1c;background:rgba(254,242,242,.92);border-color:rgba(248,113,113,.45)}
+.spinner{
+  width:14px;height:14px;border-radius:999px;flex-shrink:0;
+  border:2px solid rgba(99,102,241,.25);border-top-color:var(--accent);animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+#toast{animation:popC .2s ease-out}
+@keyframes popC{from{opacity:0;transform:translateX(-50%) translateY(-6px)}to{opacity:1;transform:translateX(-50%)}}
+
+/* ---------- bottom-left cluster ---------- */
+#bl{position:absolute;left:14px;bottom:calc(14px + var(--safe-b));z-index:18;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+#legend{border-radius:var(--r);padding:14px;width:232px;animation:pop .18s ease-out}
+.lgTitle{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+.lgRow{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2);padding:3px 0}
+.pin{
+  width:23px;height:23px;border-radius:999px;display:grid;place-items:center;flex-shrink:0;
+  color:#fff;font-size:11px;font-weight:800;box-shadow:0 0 0 2px #fff,0 3px 8px -2px rgba(15,23,42,.5)
+}
+.lgSep{height:1px;background:var(--line);margin:9px 0}
+
+/* ---------- bottom-right cluster ---------- */
+#br{
+  position:absolute;right:14px;bottom:calc(14px + var(--safe-b));z-index:18;
+  display:flex;flex-direction:column;gap:12px;align-items:flex-end;max-width:min(400px,calc(100vw - 28px))
+}
+#fab{
+  display:inline-flex;align-items:center;gap:10px;height:56px;padding:0 24px 0 19px;border-radius:999px;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;font-size:15px;
+  box-shadow:0 14px 34px -10px rgba(99,102,241,.9);transition:transform .16s,box-shadow .16s;letter-spacing:-.01em;
+}
+#fab:hover{transform:translateY(-2px);box-shadow:0 20px 44px -12px rgba(99,102,241,1)}
+#fab:active{transform:scale(.97)}
+#fab:disabled{opacity:.65;cursor:default;transform:none}
+
+/* ---------- panels (details / results) ---------- */
+.sheet{
+  border-radius:var(--r-lg);width:min(400px,calc(100vw - 28px));max-height:min(74vh,720px);
+  overflow-y:auto;box-shadow:var(--shadow-lg);animation:sheet .26s cubic-bezier(.22,1,.36,1);
+  background:var(--panel-solid);border:1px solid var(--line);
+}
+@keyframes sheet{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+.sheetHead{
+  position:sticky;top:0;z-index:2;padding:17px 18px 13px;border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);display:flex;gap:12px;align-items:flex-start
+}
+.sheetHead h2{margin:0;font-size:19px;font-weight:750;letter-spacing:-.025em;line-height:1.22}
+.sheetHead p{margin:3px 0 0;font-size:13px;color:var(--ink-3)}
+.closeX{
+  margin-left:auto;width:32px;height:32px;border-radius:11px;color:var(--ink-3);display:grid;place-items:center;flex-shrink:0;
+  transition:background .14s,color .14s
+}
+.closeX:hover{background:rgba(15,23,42,.07);color:var(--ink)}
+.statusTag{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;margin-bottom:7px;letter-spacing:-.01em}
+.sheetBody{padding:16px 18px 18px}
+
+.avail{border-radius:15px;padding:13px 15px;font-size:13.5px;font-weight:650;margin-bottom:14px;line-height:1.4}
+.avail.unknown{background:rgba(202,138,4,.10);color:#a16207}
+.avail.static{background:rgba(100,116,139,.10);color:#475569}
+
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.badge2{font-size:11.5px;font-weight:650;padding:5px 11px;border-radius:999px;background:rgba(15,23,42,.055);color:var(--ink-2)}
+.badge2.ev{background:rgba(13,148,136,.13);color:#0f766e}
+.badge2.acc{background:rgba(37,99,235,.12);color:#1d4ed8}
+
+.rows{border-top:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.row dt{color:var(--ink-3);font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding-top:3px;flex-shrink:0}
+.row dd{margin:0;text-align:right;font-weight:600}
+.na{color:var(--ink-3);font-weight:500;font-style:italic}
+.ok{color:var(--free)}
+.bad{color:var(--no)}
+
+.srcLine{display:flex;justify-content:space-between;gap:12px;font-size:11px;color:var(--ink-3);margin-top:13px}
+.navBtn{
+  display:block;width:100%;text-align:center;margin-top:15px;height:50px;line-height:50px;border-radius:999px;
+  background:linear-gradient(140deg,var(--accent),var(--accent-2));color:#fff;font-weight:700;font-size:15px;
+  text-decoration:none;box-shadow:0 12px 28px -10px rgba(99,102,241,.9);transition:transform .16s
+}
+.navBtn:hover{transform:translateY(-2px)}
+
+/* ---------- find-parking result cards ---------- */
+.card{
+  display:block;width:100%;text-align:left;padding:13px 14px;border-radius:16px;border:1px solid var(--line);
+  background:#fff;margin-bottom:9px;transition:transform .15s,box-shadow .15s,border-color .15s
+}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:rgba(99,102,241,.4)}
+.card:last-child{margin-bottom:0}
+.best{
+  font-size:10px;font-weight:800;letter-spacing:.1em;margin-bottom:6px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent
+}
+.cardTop{display:flex;gap:11px;align-items:flex-start}
+.cardName{font-weight:680;font-size:14.5px;letter-spacing:-.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reasons{font-size:12.5px;color:var(--ink-2);margin-top:3px;line-height:1.45}
+.reasons b{color:var(--ink);font-weight:650}
+.empty{font-size:13.5px;color:var(--ink-3);padding:6px 2px;line-height:1.5}
+
+/* ---------- setup overlay ---------- */
+#setup{position:absolute;inset:0;z-index:60;display:grid;place-items:center;padding:22px;background:rgba(246,247,251,.9);backdrop-filter:blur(8px)}
+#setupCard{max-width:520px;width:100%;border-radius:var(--r-lg);padding:28px;background:#fff;box-shadow:var(--shadow-lg);border:1px solid var(--line)}
+#setupCard h1{margin:0 0 6px;font-size:22px;letter-spacing:-.03em}
+#setupCard p{margin:0 0 16px;color:var(--ink-2);font-size:14px;line-height:1.6}
+#setupCard code{background:rgba(15,23,42,.06);padding:2px 7px;border-radius:7px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+#setupCard ol{margin:0;padding-left:20px;color:var(--ink-2);font-size:14px;line-height:1.85}
+
+/* ---------- mobile ---------- */
+@media (max-width:640px){
+  .brand span{display:none}
+  .brand{padding:0 13px;width:52px;justify-content:center}
+  #br{left:14px;align-items:stretch}
+  .sheet{width:100%;max-height:70vh}
+  #fab{align-self:flex-end}
+  #legend{width:calc(100vw - 28px);max-width:250px}
+  #toast{top:calc(116px + var(--safe-t))}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="top">
+  <div id="topRow">
+    <div class="brand glass"><span class="dot">P</span><span>ParkScope</span></div>
+    <div class="searchWrap">
+      <svg class="searchIcon" width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="search" type="search" placeholder="Search a place, street or landmark…" autocomplete="off" spellcheck="false" />
+      <button id="searchClear" class="hidden" aria-label="Clear search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <div id="results" class="glass hidden"></div>
+    </div>
+    <button id="locateBtn" class="iconBtn glass" aria-label="Use my location" title="Use my location">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v3.2M12 18.3v3.2M2.5 12h3.2M18.3 12h3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div id="filters"></div>
+</div>
+
+<div id="toast" class="glass hidden"></div>
+
+<div id="bl">
+  <div id="legend" class="glass hidden"></div>
+  <button id="legendBtn" class="iconBtn glass" aria-label="Toggle legend" title="What do the colours mean?">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 10.6v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.2" fill="currentColor"/></svg>
+  </button>
+</div>
+
+<div id="br">
+  <div id="detail" class="sheet hidden"></div>
+  <div id="nearby" class="sheet hidden"></div>
+  <button id="fab">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.6" fill="currentColor"/></svg>
+    <span id="fabLabel">Find parking</span>
+  </button>
+</div>
+
+<div id="setup" class="hidden"><div id="setupCard">
+  <h1>Almost there 👋</h1>
+  <p>ParkScope needs its backend before it can show any parking. Deploy the Cloudflare Worker, then paste its address into this file.</p>
+  <ol>
+    <li>Open <code>worker/index.js</code> and deploy it as a Cloudflare Worker (free plan is plenty).</li>
+    <li>Copy the Worker address it gives you — it ends in <code>.workers.dev</code>.</li>
+    <li>In <code>index.html</code>, replace the <code>WORKER_URL</code> value near the top of the script with that address.</li>
+  </ol>
+  <p style="margin:16px 0 0;font-size:13px">Just testing? Add <code>?api=https://your-worker.workers.dev</code> to this page's address instead.</p>
+</div></div>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+/* ===================================================================
+   1. CONFIGURATION
+   =================================================================== */
+
+/*  ⬇⬇⬇  PASTE YOUR CLOUDFLARE WORKER ADDRESS BETWEEN THE QUOTES  ⬇⬇⬇  */
+const WORKER_URL = "https://parkscope.YOUR-SUBDOMAIN.workers.dev";
+/*  ⬆⬆⬆  e.g. "https://parkscope.jane.workers.dev"  (no trailing slash)  */
+
+const params    = new URLSearchParams(location.search);
+const API       = (params.get("api") || WORKER_URL).replace(/\/+$/, "");
+const CONFIGURED = !/YOUR-SUBDOMAIN/.test(API);
+
+/* Must match GRID_DEG in the Worker, or cache keys won't line up. */
+const GRID_DEG = 0.02;
+/* Below this zoom we don't fetch at all: the area would be enormous and the
+   map unreadable. This is the first and biggest guard on API usage. */
+const MIN_ZOOM = 13;
+/* Never ask for more cells than this in one viewport. */
+const MAX_CELLS = 12;
+/* Parallel requests to our own Worker. */
+const CONCURRENCY = 4;
+
+const STYLE_URL = params.get("style") || "https://tiles.openfreemap.org/styles/liberty";
+const START = {
+  lon: Number(params.get("lon")) || 14.4213,
+  lat: Number(params.get("lat")) || 50.0874,
+  zoom: Number(params.get("z")) || 15.4,
+};
+
+/* ===================================================================
+   2. STATUS SYSTEM — one source of truth for colour + icon + wording.
+      Every status has its own glyph as well as its own colour, so the
+      map stays readable for colour-blind users.
+   =================================================================== */
+const STATUS = {
+  free:      { color:"#059669", glyph:"P", label:"Free parking" },
+  paid:      { color:"#2563eb", glyph:"$", label:"Paid parking" },
+  resident:  { color:"#7c3aed", glyph:"R", label:"Resident / permit" },
+  restricted:{ color:"#ea580c", glyph:"!", label:"Customers only" },
+  no:        { color:"#dc2626", glyph:"x", label:"No parking" },
+  private:   { color:"#64748b", glyph:"L", label:"Private" },
+  unknown:   { color:"#ca8a04", glyph:"?", label:"Unconfirmed" },
+};
+const TYPE_LABEL = { lot:"Parking lot", garage:"Parking garage", street:"Street parking", space:"Parking space" };
+const ACCESS_LABEL = {
+  public:"Public", private:"Private", customers:"Customers only",
+  permit:"Permit holders only", residents:"Residents only", no:"No parking", yes:"Public",
+};
+
+/* ===================================================================
+   3. STATE
+   =================================================================== */
+const cellCache = new Map();   // cell id -> features[]   (never refetched)
+const inflight  = new Map();   // cell id -> promise      (never duplicated)
+let allFeatures = [];          // everything currently loaded
+let selectedId  = null;
+let userLoc     = null;        // [lon,lat]
+let destination = null;        // {lon,lat,label}
+let map, destMarker, userMarker;
+
+const activeFilters = new Set();
+const FILTERS = [
+  { id:"free",      label:"Free",       test:p => p.fee === false },
+  { id:"paid",      label:"Paid",       test:p => p.fee === true },
+  { id:"resident",  label:"Resident",   test:p => p.status === "resident" },
+  { id:"ev",        label:"EV",         test:p => p.ev === true },
+  { id:"accessible",label:"Accessible", test:p => p.accessible === true },
+  { id:"covered",   label:"Covered",    test:p => p.covered === true },
+  { id:"open",      label:"Open now",   test:p => isOpenNow(p.opening_hours) === true },
+  { id:"street",    label:"On street",  test:p => p.parking_type === "street" },
+  { id:"garage",    label:"Garages",    test:p => p.parking_type === "garage" },
+];
+
+/* ===================================================================
+   4. HELPERS
+   =================================================================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => (
+  { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]
+));
+
+function featureCenter(g){
+  if (g.type === "Point") return g.coordinates;
+  const pts = g.type === "LineString" ? g.coordinates : g.coordinates[0];
+  let x = 0, y = 0;
+  for (const p of pts) { x += p[0]; y += p[1]; }
+  return [x / pts.length, y / pts.length];
+}
+
+function haversine(a, b){
+  const R = 6371000, rad = d => d * Math.PI / 180;
+  const dLat = rad(b[1] - a[1]), dLon = rad(b[0] - a[0]);
+  const s = Math.sin(dLat/2)**2 + Math.cos(rad(a[1])) * Math.cos(rad(b[1])) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+const fmtDist = m => m == null ? null : (m < 1000 ? Math.round(m) + " m" : (m/1000).toFixed(1) + " km");
+const walkMin = m => m == null ? null : Math.max(1, Math.round(m / 80)) + " min walk";
+
+function fmtPrice(p){
+  if (p.fee === false) return "Free";
+  if (p.price == null) return null;
+  const amount = p.currency ? `${p.price} ${p.currency}` : String(p.price);
+  return p.price_period ? `${amount} / ${p.price_period}` : amount;
+}
+
+/* A deliberately small subset of OSM's opening_hours syntax: "24/7",
+   "Mo-Fr 08:00-18:00", several rules separated by ";", and "off".
+   Anything it doesn't understand returns null = unknown, because showing
+   "Hours unavailable" is honest and showing a wrong "Open now" is not. */
+const DAYS = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+function isOpenNow(spec, now = new Date()){
+  if (!spec) return null;
+  const value = spec.trim();
+  if (value === "24/7") return true;
+  const today = DAYS[(now.getDay() + 6) % 7];
+  const mins = now.getHours() * 60 + now.getMinutes();
+  let result = null;
+
+  for (const rule of value.split(";")){
+    const text = rule.trim();
+    if (!text) continue;
+    const gap = text.indexOf(" ");
+    const dayPart  = gap === -1 ? text : text.slice(0, gap);
+    const timePart = gap === -1 ? "off" : text.slice(gap + 1).trim();
+
+    const days = [];
+    for (const token of dayPart.split(",")){
+      const m = /^(Mo|Tu|We|Th|Fr|Sa|Su)(?:-(Mo|Tu|We|Th|Fr|Sa|Su))?$/.exec(token.trim());
+      if (!m) return null;                       // unsupported syntax
+      if (!m[2]) { days.push(m[1]); continue; }
+      let i = DAYS.indexOf(m[1]);
+      const end = DAYS.indexOf(m[2]);
+      for (;;){ days.push(DAYS[i]); if (i === end) break; i = (i + 1) % 7; }
+    }
+    if (!days.includes(today)) continue;
+
+    if (timePart === "off" || timePart === "closed"){ result = false; continue; }
+    let open = false, sawRange = false;
+    for (const span of timePart.split(",")){
+      const m = /^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/.exec(span.trim());
+      if (!m) return null;                       // unsupported syntax
+      sawRange = true;
+      const from = +m[1] * 60 + +m[2], to = +m[3] * 60 + +m[4];
+      if (to <= from ? (mins >= from || mins < to) : (mins >= from && mins < to)) open = true;
+    }
+    if (!sawRange) return null;
+    result = open;                               // later rules win
+  }
+  return result;
+}
+
+/* ===================================================================
+   5. MARKER BITMAPS — drawn on a canvas rather than using map fonts,
+      because vector-tile glyph sets often lack the symbols we want and
+      render them as empty boxes.
+   =================================================================== */
+function drawMarker(color, glyph){
+  const S = 58, c = document.createElement("canvas");
+  c.width = c.height = S;
+  const g = c.getContext("2d"), cx = S/2, cy = S/2 - 1, r = 20;
+
+  g.save();
+  g.shadowColor = "rgba(15,23,42,.45)"; g.shadowBlur = 9; g.shadowOffsetY = 3;
+  g.fillStyle = "#fff";
+  g.beginPath(); g.arc(cx, cy, r, 0, Math.PI*2); g.fill();
+  g.restore();
+
+  g.fillStyle = color;
+  g.beginPath(); g.arc(cx, cy, r - 3.4, 0, Math.PI*2); g.fill();
+
+  g.fillStyle = "#fff"; g.strokeStyle = "#fff";
+  if (glyph === "x"){
+    g.lineWidth = 3.6; g.lineCap = "round";
+    g.beginPath(); g.moveTo(cx-6,cy-6); g.lineTo(cx+6,cy+6); g.moveTo(cx+6,cy-6); g.lineTo(cx-6,cy+6); g.stroke();
+  } else if (glyph === "L"){
+    g.lineWidth = 2.7; g.lineCap = "round";
+    g.beginPath(); g.arc(cx, cy-2, 4.2, Math.PI, 0); g.stroke();
+    g.beginPath(); g.roundRect(cx-6.5, cy-1.5, 13, 9.5, 2); g.fill();
+  } else {
+    g.font = '700 21px ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(glyph, cx, cy + 1);
+  }
+  return g.getImageData(0, 0, S, S);
+}
+
+function drawBadge(color, kind){
+  const S = 28, c = document.createElement("canvas");
+  c.width = c.height = S;
+  const g = c.getContext("2d"), cx = S/2, cy = S/2;
+
+  g.save();
+  g.shadowColor = "rgba(15,23,42,.38)"; g.shadowBlur = 4; g.shadowOffsetY = 1;
+  g.fillStyle = "#fff"; g.beginPath(); g.arc(cx, cy, 11, 0, Math.PI*2); g.fill();
+  g.restore();
+  g.fillStyle = color; g.beginPath(); g.arc(cx, cy, 9.5, 0, Math.PI*2); g.fill();
+  g.fillStyle = "#fff"; g.strokeStyle = "#fff";
+
+  if (kind === "ev"){
+    g.beginPath();
+    g.moveTo(cx+2.6,cy-6.5); g.lineTo(cx-3.8,cy+.8); g.lineTo(cx-.4,cy+.8);
+    g.lineTo(cx-2.4,cy+6.5); g.lineTo(cx+4,cy-.9); g.lineTo(cx+.5,cy-.9);
+    g.closePath(); g.fill();
+  } else {
+    g.lineWidth = 1.9; g.lineCap = "round"; g.lineJoin = "round";
+    g.beginPath(); g.arc(cx-.5, cy-5, 1.9, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(cx, cy+2.4, 4.6, Math.PI*.15, Math.PI*1.75); g.stroke();
+    g.beginPath(); g.moveTo(cx-2.2,cy-2.2); g.lineTo(cx-2.2,cy+1.6); g.lineTo(cx+2.6,cy+1.6); g.stroke();
+    g.beginPath(); g.moveTo(cx+2.6,cy+1.6); g.lineTo(cx+4.4,cy+5.6); g.stroke();
+  }
+  return g.getImageData(0, 0, S, S);
+}
+
+function registerImages(){
+  for (const [name, s] of Object.entries(STATUS)){
+    const id = "pin-" + name;
+    if (!map.hasImage(id)) map.addImage(id, drawMarker(s.color, s.glyph), { pixelRatio: 2 });
+  }
+  if (!map.hasImage("badge-ev")) map.addImage("badge-ev", drawBadge("#0d9488", "ev"), { pixelRatio: 2 });
+  if (!map.hasImage("badge-acc")) map.addImage("badge-acc", drawBadge("#2563eb", "acc"), { pixelRatio: 2 });
+}
+
+/* ===================================================================
+   6. MAP
+   =================================================================== */
+const COLOR_BY_STATUS = ["match", ["get","status"],
+  "free", STATUS.free.color, "paid", STATUS.paid.color, "resident", STATUS.resident.color,
+  "restricted", STATUS.restricted.color, "no", STATUS.no.color, "private", STATUS.private.color,
+  STATUS.unknown.color];
+const ICON_BY_STATUS = ["match", ["get","status"],
+  "free","pin-free","paid","pin-paid","resident","pin-resident","restricted","pin-restricted",
+  "no","pin-no","private","pin-private","pin-unknown"];
+/* Bays sit beside the road on the side the data actually says; when the side
+   is unknown they stay on the centreline rather than claiming one. */
+const bayOffset = n => ["match", ["to-string", ["get","street_side"]], "left", -n, ["right","both"], n, 0];
+
+const EMPTY = { type:"FeatureCollection", features:[] };
+
+function initMap(){
+  map = new maplibregl.Map({
+    container:"map", style:STYLE_URL,
+    center:[START.lon, START.lat], zoom:START.zoom,
+    pitch:44, maxPitch:68, attributionControl:false, hash:false,
+  });
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch:true }), "top-right");
+  map.addControl(new maplibregl.AttributionControl({ compact:true }), "bottom-right");
+
+  map.on("load", () => {
+    registerImages();
+
+    // Wash the basemap toward white so the colour-coded parking is the
+    // thing your eye lands on. Inserted under the first label layer so
+    // street names stay crisp.
+    const firstSymbol = (map.getStyle().layers || []).find(l => l.type === "symbol");
+    map.addSource("wash", { type:"geojson", data:{ type:"Feature", properties:{}, geometry:{
+      type:"Polygon", coordinates:[[[-180,-85],[180,-85],[180,85],[-180,85],[-180,-85]]] } } });
+    map.addLayer({ id:"wash", type:"fill", source:"wash",
+      paint:{ "fill-color":"#ffffff", "fill-opacity":0.72 } }, firstSymbol && firstSymbol.id);
+
+    map.addSource("parking", { type:"geojson", data:EMPTY });
+    map.addSource("halo", { type:"geojson", data:EMPTY });
+
+    map.addLayer({ id:"areas", type:"fill", source:"parking",
+      filter:["==",["geometry-type"],"Polygon"],
+      paint:{ "fill-color":COLOR_BY_STATUS, "fill-opacity":0.2 } });
+    map.addLayer({ id:"areas-line", type:"line", source:"parking",
+      filter:["==",["geometry-type"],"Polygon"],
+      paint:{ "line-color":COLOR_BY_STATUS, "line-width":["interpolate",["linear"],["zoom"],13,1.4,18,2.8], "line-opacity":.95 } });
+
+    // On-street parking as a row of bays running along the kerb.
+    map.addLayer({ id:"bays", type:"line", source:"parking",
+      filter:["==",["geometry-type"],"LineString"],
+      layout:{ "line-cap":"butt" },
+      paint:{ "line-color":COLOR_BY_STATUS,
+        "line-width":["interpolate",["linear"],["zoom"],13,3,18,9],
+        "line-offset":["interpolate",["linear"],["zoom"],13,bayOffset(2),18,bayOffset(9)],
+        "line-dasharray":[1.1,.7] } });
+    map.addLayer({ id:"bays-2", type:"line", source:"parking",
+      filter:["all",["==",["geometry-type"],"LineString"],["==",["get","street_side"],"both"]],
+      layout:{ "line-cap":"butt" },
+      paint:{ "line-color":COLOR_BY_STATUS,
+        "line-width":["interpolate",["linear"],["zoom"],13,3,18,9],
+        "line-offset":["interpolate",["linear"],["zoom"],13,-2,18,-9],
+        "line-dasharray":[1.1,.7] } });
+
+    map.addLayer({ id:"halo", type:"circle", source:"halo",
+      paint:{ "circle-color":COLOR_BY_STATUS, "circle-opacity":.26, "circle-radius":20,
+        "circle-stroke-color":COLOR_BY_STATUS, "circle-stroke-width":2, "circle-stroke-opacity":.5 } });
+
+    // One symbol layer covers every geometry type: MapLibre anchors the icon
+    // at a point, a line's middle, or a polygon's centroid.
+    map.addLayer({ id:"pins", type:"symbol", source:"parking",
+      layout:{ "icon-image":ICON_BY_STATUS,
+        "icon-size":["interpolate",["linear"],["zoom"],13,.62,15,.84,18,1],
+        "icon-allow-overlap":true, "icon-ignore-placement":true } });
+    map.addLayer({ id:"ev", type:"symbol", source:"parking",
+      filter:["==",["get","ev"],true],
+      layout:{ "icon-image":"badge-ev", "icon-size":["interpolate",["linear"],["zoom"],13,.6,18,.9],
+        "icon-offset":[13,-13], "icon-allow-overlap":true, "icon-ignore-placement":true } });
+    map.addLayer({ id:"acc", type:"symbol", source:"parking",
+      filter:["==",["get","accessible"],true],
+      layout:{ "icon-image":"badge-acc", "icon-size":["interpolate",["linear"],["zoom"],13,.6,18,.9],
+        "icon-offset":[-13,-13], "icon-allow-overlap":true, "icon-ignore-placement":true } });
+
+    // Labels need the basemap style to ship glyphs; if it doesn't, we lose
+    // only the names rather than the whole map.
+    try {
+      map.addLayer({ id:"labels", type:"symbol", source:"parking", minzoom:16,
+        filter:["has","name"],
+        layout:{ "text-field":["get","name"], "text-font":["Noto Sans Regular"], "text-size":11.5,
+          "text-offset":[0,1.7], "text-anchor":"top", "text-max-width":9, "text-optional":true },
+        paint:{ "text-color":"#0b1220", "text-halo-color":"#fff", "text-halo-width":1.5 } });
+    } catch (e) { console.warn("Basemap has no glyphs — parking labels disabled.", e); }
+
+    for (const layer of ["pins","areas","bays","bays-2"]){
+      map.on("mouseenter", layer, () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", layer, () => map.getCanvas().style.cursor = "");
+    }
+    map.on("click", onMapClick);
+    map.on("moveend", refresh);
+    refresh();
+  });
+
+  map.on("error", e => console.warn("map:", e && e.error && e.error.message));
+}
+
+function onMapClick(e){
+  const hits = map.queryRenderedFeatures(e.point, { layers:["pins","areas","bays","bays-2"] });
+  if (!hits.length) { select(null); return; }
+  select(hits[0].properties.id);
+}
+
+/* ===================================================================
+   7. DATA LOADING
+      Every request is for one whole grid cell, so the URL is identical
+      for everyone looking at the same street — which is what makes the
+      browser cache, the Cloudflare edge cache and the in-memory cache
+      below all actually hit.
+   =================================================================== */
+function cellsForBounds(b){
+  const x0 = Math.floor(b.getWest() / GRID_DEG),  x1 = Math.floor(b.getEast() / GRID_DEG);
+  const y0 = Math.floor(b.getSouth() / GRID_DEG), y1 = Math.floor(b.getNorth() / GRID_DEG);
+  const out = [];
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) out.push(x + "_" + y);
+  return out;
+}
+
+async function fetchCell(id){
+  if (cellCache.has(id)) return cellCache.get(id);
+  if (inflight.has(id)) return inflight.get(id);
+
+  const job = (async () => {
+    const res = await fetch(`${API}/api/parking?cell=${id}`, { headers:{ Accept:"application/json" } });
+    if (!res.ok) throw new Error(`Backend returned ${res.status}`);
+    const body = await res.json();
+    const features = body.features || [];
+    // A cell whose upstream lookup failed is NOT cached here, so it can be
+    // retried later; a genuinely empty cell is, so we never ask again.
+    if (!(body.meta && body.meta.error)) cellCache.set(id, features);
+    return features;
+  })().finally(() => inflight.delete(id));
+
+  inflight.set(id, job);
+  return job;
+}
+
+async function pool(items, worker, limit){
+  const queue = items.slice();
+  const runners = Array.from({ length: Math.min(limit, queue.length) }, async () => {
+    while (queue.length) await worker(queue.shift());
+  });
+  await Promise.all(runners);
+}
+
+let refreshToken = 0;
+async function refresh(){
+  if (!CONFIGURED || !map) return;
+
+  if (map.getZoom() < MIN_ZOOM){
+    allFeatures = [];
+    render();
+    toast("Zoom in to load parking", "info", true);
+    return;
+  }
+
+  const cells = cellsForBounds(map.getBounds());
+  if (cells.length > MAX_CELLS){
+    toast("Zoom in to load parking", "info", true);
+    return;
+  }
+
+  const mine = ++refreshToken;
+  const missing = cells.filter(id => !cellCache.has(id));
+  if (missing.length) toast("Loading parking…", "load", true);
+
+  const failures = [];
+  await pool(missing, async id => {
+    try { await fetchCell(id); }
+    catch (err) { failures.push(String(err.message || err)); }
+  }, CONCURRENCY);
+
+  if (mine !== refreshToken) return;   // a newer pan superseded this one
+
+  const seen = new Set();
+  allFeatures = [];
+  for (const id of cells){
+    for (const f of (cellCache.get(id) || [])){
+      if (seen.has(f.properties.id)) continue;  // a lot can straddle two cells
+      seen.add(f.properties.id);
+      allFeatures.push(f);
+    }
+  }
+
+  render();
+  if (failures.length && !allFeatures.length) toast("Couldn't reach the parking service", "err");
+  else toast(null);
+}
+
+/* ===================================================================
+   8. RENDERING + FILTERS  (all client-side: filtering costs zero requests)
+   =================================================================== */
+function visibleFeatures(){
+  if (!activeFilters.size) return allFeatures;
+  const tests = FILTERS.filter(f => activeFilters.has(f.id));
+  return allFeatures.filter(f => tests.every(t => t.test(f.properties)));
+}
+
+function render(){
+  if (!map || !map.getSource("parking")) return;
+  const features = visibleFeatures();
+  map.getSource("parking").setData({ type:"FeatureCollection", features });
+
+  const n = features.length;
+  $("fabLabel").textContent = n ? `Find parking · ${n}` : "Find parking";
+  $("fab").disabled = !n;
+
+  if (selectedId && !features.some(f => f.properties.id === selectedId)) select(null);
+  renderHalo();
+}
+
+function renderHalo(){
+  if (!map.getSource("halo")) return;
+  const f = allFeatures.find(x => x.properties.id === selectedId);
+  map.getSource("halo").setData(f
+    ? { type:"FeatureCollection", features:[{ type:"Feature", properties:f.properties,
+        geometry:{ type:"Point", coordinates:featureCenter(f.geometry) } }] }
+    : EMPTY);
+}
+
+let haloFrame = null;
+function animateHalo(){
+  cancelAnimationFrame(haloFrame);
+  if (!selectedId) return;
+  const start = performance.now();
+  const step = now => {
+    if (!selectedId || !map.getLayer("halo")) return;
+    const t = ((now - start) % 1700) / 1700;
+    map.setPaintProperty("halo", "circle-radius", 17 + t * 27);
+    map.setPaintProperty("halo", "circle-opacity", .3 * (1 - t));
+    map.setPaintProperty("halo", "circle-stroke-opacity", .55 * (1 - t));
+    haloFrame = requestAnimationFrame(step);
+  };
+  haloFrame = requestAnimationFrame(step);
+}
+
+function buildFilters(){
+  const box = $("filters");
+  box.innerHTML = "";
+  for (const f of FILTERS){
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = f.label;
+    b.onclick = () => {
+      activeFilters.has(f.id) ? activeFilters.delete(f.id) : activeFilters.add(f.id);
+      b.classList.toggle("on", activeFilters.has(f.id));
+      render();
+    };
+    box.appendChild(b);
+  }
+}
+
+/* ===================================================================
+   9. TOAST
+   =================================================================== */
+let toastTimer = null;
+function toast(message, kind = "info", sticky = false){
+  const el = $("toast");
+  clearTimeout(toastTimer);
+  if (!message){ el.classList.add("hidden"); return; }
+  el.className = "glass" + (kind === "err" ? " err" : "");
+  el.innerHTML = (kind === "load" ? '<span class="spinner"></span>' : "") + esc(message);
+  if (!sticky) toastTimer = setTimeout(() => el.classList.add("hidden"), 3400);
+}
+
+/* ===================================================================
+   10. DETAILS PANEL
+   =================================================================== */
+function select(id){
+  selectedId = id;
+  renderHalo();
+  animateHalo();
+  const feature = allFeatures.find(f => f.properties.id === id);
+  if (!feature){ $("detail").classList.add("hidden"); return; }
+  $("nearby").classList.add("hidden");
+  showDetail(feature);
+}
+
+function row(label, value, cls){
+  const body = value == null || value === ""
+    ? '<dd class="na">Information unavailable</dd>'
+    : `<dd class="${cls || ""}">${value}</dd>`;
+  return `<div class="row"><dt>${esc(label)}</dt>${body}</div>`;
+}
+
+function showDetail(feature){
+  const p = feature.properties;
+  const s = STATUS[p.status] || STATUS.unknown;
+  const center = featureCenter(feature.geometry);
+  const ref = destination ? [destination.lon, destination.lat] : userLoc;
+  const dist = ref ? haversine(ref, center) : null;
+  const open = isOpenNow(p.opening_hours);
+
+  const hours = p.opening_hours
+    ? esc(p.opening_hours) + (open === null ? "" :
+        ` · <span class="${open ? "ok" : "bad"}">${open ? "Open now" : "Closed now"}</span>`)
+    : null;
+
+  const badges = [
+    p.ev === true ? '<span class="badge2 ev">⚡ EV charging</span>' : "",
+    p.accessible === true ? '<span class="badge2 acc">♿ Accessible</span>' : "",
+    p.covered === true ? '<span class="badge2">Covered</span>' : "",
+    p.covered === false ? '<span class="badge2">Open-air</span>' : "",
+    p.street_side ? `<span class="badge2">Bays: ${esc(p.street_side)} side</span>` : "",
+  ].join("");
+
+  $("detail").innerHTML = `
+    <div class="sheetHead">
+      <div style="min-width:0">
+        <div class="statusTag" style="color:${s.color}">
+          <span class="pin" style="background:${s.color}">${esc(s.glyph === "L" ? "🔒" : s.glyph === "x" ? "✕" : s.glyph)}</span>
+          ${esc(s.label)}
+        </div>
+        <h2>${esc(p.name || TYPE_LABEL[p.parking_type] || "Parking")}</h2>
+        <p>${esc(p.address || TYPE_LABEL[p.parking_type] || "")}</p>
+      </div>
+      <button class="closeX" onclick="select(null)" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="sheetBody">
+      <div class="avail unknown">Live availability unknown — OpenStreetMap describes what exists here, not how full it is right now.</div>
+      ${badges ? `<div class="badges">${badges}</div>` : ""}
+      <div class="rows">
+        ${row("Type", esc(TYPE_LABEL[p.parking_type] || "Parking"))}
+        ${row("Access", p.access ? esc(ACCESS_LABEL[p.access] || p.access) : null)}
+        ${row("Price", fmtPrice(p))}
+        ${row("Opening hours", hours)}
+        ${row("Max stay", p.max_stay ? esc(p.max_stay) : null)}
+        ${row("Capacity", p.capacity != null ? esc(p.capacity) + " spaces" : null)}
+        ${p.capacity_disabled != null ? row("Accessible spaces", esc(p.capacity_disabled)) : ""}
+        ${dist != null ? row("Distance", `${fmtDist(dist)} · ${walkMin(dist)}`) : ""}
+      </div>
+      <div class="srcLine"><span>Source: OpenStreetMap</span><span>${esc(p.id)}</span></div>
+      <a class="navBtn" target="_blank" rel="noreferrer"
+         href="https://www.google.com/maps/dir/?api=1&destination=${center[1]},${center[0]}">Navigate here</a>
+    </div>`;
+  $("detail").classList.remove("hidden");
+  $("detail").scrollTop = 0;
+}
+
+/* ===================================================================
+   11. FIND PARKING — ranked entirely in the browser from data we
+       already have, so it costs no extra API calls at all.
+   =================================================================== */
+function rank(features, from){
+  const scored = features.map(f => {
+    const p = f.properties;
+    const d = haversine(from, featureCenter(f.geometry));
+    const open = isOpenNow(p.opening_hours);
+
+    let score = 0.45 * Math.max(0, 1 - d / 900);
+    score += 0.25 * (p.fee === false ? 1 : p.price != null ? Math.max(0, 1 - Math.min(p.price, 100) / 100) : .5);
+    score += 0.15 * (open === false ? 0 : 1);
+    score += 0.15 * (p.capacity ? Math.min(1, p.capacity / 200) : .4);
+    if (p.status === "no") score -= 1;
+    if (p.status === "private") score -= .6;
+    if (p.status === "resident") score -= .45;
+
+    const reasons = [`<b>${fmtDist(d)}</b> away`];
+    if (p.fee === false) reasons.push("Free");
+    else if (p.fee === true) reasons.push(fmtPrice(p) || "Paid");
+    if (open === true) reasons.push("Open now");
+    else if (open === false) reasons.push("Closed now");
+    if (p.capacity != null) reasons.push(`${p.capacity} spaces`);
+    if (p.ev === true) reasons.push("EV");
+    if (p.accessible === true) reasons.push("Accessible");
+    if (p.status === "resident") reasons.push("Residents only");
+    if (p.status === "private") reasons.push("Private");
+
+    return { f, d, score, reasons };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, 12);
+}
+
+function showNearby(){
+  const from = destination ? [destination.lon, destination.lat] : userLoc || [map.getCenter().lng, map.getCenter().lat];
+  const results = rank(visibleFeatures(), from);
+  const where = destination ? esc(destination.label.split(",")[0]) : userLoc ? "your location" : "the map centre";
+
+  $("nearby").innerHTML = `
+    <div class="sheetHead">
+      <div style="min-width:0">
+        <h2>Best parking nearby</h2>
+        <p>Ranked by distance, price and restrictions from ${where}</p>
+      </div>
+      <button class="closeX" onclick="document.getElementById('nearby').classList.add('hidden')" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="sheetBody">
+      ${results.length ? results.map((r, i) => {
+        const p = r.f.properties, s = STATUS[p.status] || STATUS.unknown;
+        return `<button class="card" onclick="pickResult('${esc(p.id)}')">
+          ${i === 0 ? '<div class="best">BEST MATCH</div>' : ""}
+          <div class="cardTop">
+            <span class="pin" style="background:${s.color}">${esc(s.glyph === "L" ? "🔒" : s.glyph === "x" ? "✕" : s.glyph)}</span>
+            <div style="min-width:0;flex:1">
+              <div class="cardName">${esc(p.name || TYPE_LABEL[p.parking_type] || "Parking")}</div>
+              <div class="reasons">${r.reasons.join(" · ")}</div>
+            </div>
+          </div>
+        </button>`;
+      }).join("") : '<div class="empty">No parking matches your filters in this view. Try turning some filters off, or pan somewhere else.</div>'}
+    </div>`;
+  $("detail").classList.add("hidden");
+  $("nearby").classList.remove("hidden");
+}
+
+function pickResult(id){
+  const f = allFeatures.find(x => x.properties.id === id);
+  $("nearby").classList.add("hidden");
+  if (f) map.easeTo({ center:featureCenter(f.geometry), zoom:Math.max(map.getZoom(), 16.5), duration:700 });
+  select(id);
+}
+window.pickResult = pickResult;
+window.select = select;
+
+/* ===================================================================
+   12. SEARCH
+   =================================================================== */
+let searchTimer = null;
+function wireSearch(){
+  const input = $("search"), box = $("results"), clear = $("searchClear");
+
+  input.addEventListener("input", () => {
+    const q = input.value.trim();
+    clear.classList.toggle("hidden", !q);
+    clearTimeout(searchTimer);
+    if (q.length < 3){ box.classList.add("hidden"); return; }
+    // Debounced so typing a place name is one request, not one per keystroke.
+    searchTimer = setTimeout(() => runSearch(q), 420);
+  });
+
+  clear.onclick = () => {
+    input.value = ""; clear.classList.add("hidden"); box.classList.add("hidden");
+    if (destMarker){ destMarker.remove(); destMarker = null; }
+    destination = null;
+  };
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".searchWrap")) box.classList.add("hidden");
+  });
+}
+
+async function runSearch(q){
+  const box = $("results");
+  try {
+    const res = await fetch(`${API}/api/search?q=${encodeURIComponent(q)}`);
+    const body = await res.json();
+    const list = body.results || [];
+    box.innerHTML = list.length
+      ? list.map(r => `<button data-lat="${r.lat}" data-lon="${r.lon}" data-label="${esc(r.label)}">
+            <div class="rTitle">${esc(r.label.split(",")[0])}</div>
+            <div class="rSub">${esc((r.type || "place").replace(/_/g, " "))} · ${esc(r.label.split(",").slice(1, 3).join(",").trim())}</div>
+          </button>`).join("")
+      : '<div class="empty" style="padding:14px 16px">No places found</div>';
+    box.classList.remove("hidden");
+    box.querySelectorAll("button").forEach(b => b.onclick = () => {
+      goTo(Number(b.dataset.lon), Number(b.dataset.lat), b.dataset.label);
+      box.classList.add("hidden");
+      $("search").value = b.dataset.label.split(",")[0];
+      $("searchClear").classList.remove("hidden");
+    });
+  } catch (err) {
+    box.innerHTML = '<div class="empty" style="padding:14px 16px">Search is unavailable right now</div>';
+    box.classList.remove("hidden");
+  }
+}
+
+function goTo(lon, lat, label){
+  destination = { lon, lat, label };
+  if (destMarker) destMarker.remove();
+  const el = document.createElement("div");
+  el.style.cssText = "width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:linear-gradient(140deg,#6366f1,#8b5cf6);box-shadow:0 0 0 3px #fff,0 6px 16px -4px rgba(99,102,241,.9)";
+  destMarker = new maplibregl.Marker({ element:el, anchor:"bottom" }).setLngLat([lon, lat]).addTo(map);
+  map.flyTo({ center:[lon, lat], zoom:Math.max(map.getZoom(), 16), duration:900, essential:true });
+}
+
+/* ===================================================================
+   13. GEOLOCATION
+   =================================================================== */
+function locate(){
+  if (!navigator.geolocation){ toast("This browser can't share your location", "err"); return; }
+  toast("Finding you…", "load", true);
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLoc = [pos.coords.longitude, pos.coords.latitude];
+    if (userMarker) userMarker.remove();
+    const el = document.createElement("div");
+    el.style.cssText = "width:16px;height:16px;border-radius:999px;background:#2563eb;box-shadow:0 0 0 3px #fff,0 0 0 9px rgba(37,99,235,.22)";
+    userMarker = new maplibregl.Marker({ element:el }).setLngLat(userLoc).addTo(map);
+    map.flyTo({ center:userLoc, zoom:Math.max(map.getZoom(), 16), duration:900, essential:true });
+    toast(null);
+  }, err => toast(err.message || "Couldn't get your location", "err"), { enableHighAccuracy:true, timeout:10000 });
+}
+
+/* ===================================================================
+   14. LEGEND
+   =================================================================== */
+function buildLegend(){
+  const order = ["free","paid","resident","restricted","no","private","unknown"];
+  $("legend").innerHTML = `<div class="lgTitle">What the pins mean</div>` +
+    order.map(k => {
+      const s = STATUS[k];
+      const glyph = s.glyph === "L" ? "🔒" : s.glyph === "x" ? "✕" : s.glyph;
+      return `<div class="lgRow"><span class="pin" style="background:${s.color}">${glyph}</span>${esc(s.label)}</div>`;
+    }).join("") +
+    `<div class="lgSep"></div>
+     <div class="lgRow"><span class="pin" style="background:var(--ev)">⚡</span>EV charging</div>
+     <div class="lgRow"><span class="pin" style="background:var(--acc)">♿</span>Accessible spaces</div>
+     <div class="lgSep"></div>
+     <div class="lgRow" style="font-size:11.5px;line-height:1.5">Dashed bands along a street are parking bays, drawn on the side the data says.</div>`;
+}
+
+/* ===================================================================
+   15. BOOT
+   =================================================================== */
+buildFilters();
+buildLegend();
+wireSearch();
+$("legendBtn").onclick = () => $("legend").classList.toggle("hidden");
+$("locateBtn").onclick = locate;
+$("fab").onclick = showNearby;
+
+if (!CONFIGURED){
+  $("setup").classList.remove("hidden");
+} else {
+  initMap();
+}
+</script>
+</body>
+</html>

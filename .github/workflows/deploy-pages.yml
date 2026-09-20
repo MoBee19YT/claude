@@ -1,24 +1,16 @@
-name: Deploy frontend to GitHub Pages
+name: Deploy site to GitHub Pages
 
-# Builds frontend/ as a static site and deploys it to GitHub Pages.
-# The backend is NOT deployed by this workflow - see render.yaml and
-# README.md's "Deploying to production" section for that half.
+# Publishes the single-file app (index.html) to GitHub Pages. There is no
+# build step - the file is the app.
 #
-# One-time setup required before this works:
-#   1. Repo Settings -> Pages -> Source: "GitHub Actions".
-#   2. Repo Settings -> Secrets and variables -> Actions -> Variables tab ->
-#      add VITE_API_BASE_URL = https://<your-backend>.onrender.com/api/v1
-#      (and optionally VITE_DEFAULT_LAT/LON/ZOOM to change the starting view).
-#
-# Trims to just `main` once this branch is merged - it currently also
-# triggers on the MVP dev branch so you can verify the deploy before that.
+# One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
 on:
   push:
     branches:
       - main
       - claude/parking-discovery-mvp-dxxfla
     paths:
-      - "frontend/**"
+      - "index.html"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
@@ -32,40 +24,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Build
-        working-directory: frontend
-        env:
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-          VITE_DEFAULT_LAT: ${{ vars.VITE_DEFAULT_LAT }}
-          VITE_DEFAULT_LON: ${{ vars.VITE_DEFAULT_LON }}
-          VITE_DEFAULT_ZOOM: ${{ vars.VITE_DEFAULT_ZOOM }}
-        run: npm run build
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: frontend/dist
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect the site
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          # Serve the same page for unknown paths so deep links don't 404.
+          cp index.html _site/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
       - id: deployment
         uses: actions/deploy-pages@v4
