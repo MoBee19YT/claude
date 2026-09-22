@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 150" role="img" aria-label="Memory module with silver heatspreader">
+  <defs>
+    <linearGradient id="ramsBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#DDE3EC"/>
+      <stop offset="0.45" stop-color="#B2BCCA"/>
+      <stop offset="1" stop-color="#8C96A6"/>
+    </linearGradient>
+    <linearGradient id="ramsGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D9B56A"/>
+      <stop offset="1" stop-color="#A8863F"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="180" cy="140" rx="150" ry="9" fill="#1B2942" opacity="0.10"/>
+
+  <rect x="22" y="96" width="316" height="30" rx="4" fill="#232B3A"/>
+  <g fill="url(#ramsGold)">
+    <rect x="34" y="114" width="118" height="12" rx="2"/>
+    <rect x="166" y="114" width="162" height="12" rx="2"/>
+  </g>
+  <rect x="152" y="112" width="12" height="16" rx="2" fill="#141A24"/>
+
+  <path d="M26 30 h308 a6 6 0 0 1 6 6 v60 a6 6 0 0 1 -6 6 h-308 a6 6 0 0 1 -6 -6 v-60 a6 6 0 0 1 6 -6 z" fill="url(#ramsBody)"/>
+
+  <g stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.55">
+    <path d="M44 44 V90"/><path d="M60 44 V90"/><path d="M76 44 V90"/><path d="M92 44 V90"/>
+    <path d="M268 44 V90"/><path d="M284 44 V90"/><path d="M300 44 V90"/><path d="M316 44 V90"/>
+  </g>
+  <g stroke="#7D8899" stroke-width="1" opacity="0.5">
+    <path d="M52 44 V90"/><path d="M68 44 V90"/><path d="M84 44 V90"/>
+    <path d="M276 44 V90"/><path d="M292 44 V90"/><path d="M308 44 V90"/>
+  </g>
+
+  <!-- top ridge -->
+  <path d="M30 30 h300" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+
+  <rect x="116" y="48" width="128" height="34" rx="5" fill="#3B4657" opacity="0.9"/>
+  <text x="180" y="71" text-anchor="middle" font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="18" font-weight="700" fill="#D6DEE9" letter-spacing="2">DDR5</text>
+</svg>

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Memory modules on a dark background">
+  <defs>
+    <linearGradient id="armBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17243D"/>
+      <stop offset="0.55" stop-color="#101B2E"/>
+      <stop offset="1" stop-color="#0A1220"/>
+    </linearGradient>
+    <radialGradient id="armGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4E93D6" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#4E93D6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="armEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3C86CE" stop-opacity="0.15"/>
+      <stop offset="0.5" stop-color="#7DB6EE" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#3C86CE" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#armBg)"/>
+  <g opacity="0.18" stroke="#5E8FC4" stroke-width="1">
+    <path d="M0 80 H640"/><path d="M0 160 H640"/><path d="M0 240 H640"/><path d="M0 320 H640"/>
+    <path d="M80 0 V400"/><path d="M160 0 V400"/><path d="M240 0 V400"/><path d="M320 0 V400"/>
+    <path d="M400 0 V400"/><path d="M480 0 V400"/><path d="M560 0 V400"/>
+  </g>
+  <ellipse cx="330" cy="200" rx="300" ry="190" fill="url(#armGlow)"/>
+  <g transform="translate(96,96) rotate(-8)">
+    <rect x="0" y="0" width="70" height="210" rx="8" fill="#1D2B42" stroke="#31496B" stroke-width="2"/>
+    <rect x="12" y="14" width="46" height="8" rx="4" fill="url(#armEdge)"/>
+    <g stroke="#31496B" stroke-width="4" stroke-linecap="round">
+      <path d="M14 44 V180"/><path d="M28 44 V180"/><path d="M42 44 V180"/><path d="M56 44 V180"/>
+    </g>
+  </g>
+  <g transform="translate(206,72) rotate(-8)">
+    <rect x="0" y="0" width="70" height="210" rx="8" fill="#22334E" stroke="#3B5578" stroke-width="2"/>
+    <rect x="12" y="14" width="46" height="8" rx="4" fill="url(#armEdge)"/>
+    <g stroke="#3B5578" stroke-width="4" stroke-linecap="round">
+      <path d="M14 44 V180"/><path d="M28 44 V180"/><path d="M42 44 V180"/><path d="M56 44 V180"/>
+    </g>
+  </g>
+  <g transform="translate(316,48) rotate(-8)">
+    <rect x="0" y="0" width="70" height="210" rx="8" fill="#273B5A" stroke="#456283" stroke-width="2"/>
+    <rect x="12" y="14" width="46" height="8" rx="4" fill="url(#armEdge)"/>
+    <g stroke="#456283" stroke-width="4" stroke-linecap="round">
+      <path d="M14 44 V180"/><path d="M28 44 V180"/><path d="M42 44 V180"/><path d="M56 44 V180"/>
+    </g>
+  </g>
+</svg>

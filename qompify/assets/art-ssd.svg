@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Solid state drive board">
+  <defs>
+    <linearGradient id="assBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17243D"/>
+      <stop offset="0.55" stop-color="#101B2E"/>
+      <stop offset="1" stop-color="#0A1220"/>
+    </linearGradient>
+    <radialGradient id="assGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4E93D6" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#4E93D6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="assEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3C86CE" stop-opacity="0.15"/>
+      <stop offset="0.5" stop-color="#7DB6EE" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#3C86CE" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#assBg)"/>
+  <g opacity="0.18" stroke="#5E8FC4" stroke-width="1">
+    <path d="M0 80 H640"/><path d="M0 160 H640"/><path d="M0 240 H640"/><path d="M0 320 H640"/>
+    <path d="M80 0 V400"/><path d="M160 0 V400"/><path d="M240 0 V400"/><path d="M320 0 V400"/>
+    <path d="M400 0 V400"/><path d="M480 0 V400"/><path d="M560 0 V400"/>
+  </g>
+  <ellipse cx="330" cy="200" rx="300" ry="190" fill="url(#assGlow)"/>
+  <g transform="translate(96,136)">
+    <rect x="0" y="0" width="448" height="128" rx="10" fill="#18273F" stroke="#35527A" stroke-width="2"/>
+    <rect x="0" y="0" width="448" height="10" rx="5" fill="url(#assEdge)"/>
+    <g fill="#223755" stroke="#3E608A" stroke-width="1.5">
+      <rect x="28" y="34" width="86" height="60" rx="5"/>
+      <rect x="128" y="34" width="86" height="60" rx="5"/>
+      <rect x="228" y="34" width="86" height="60" rx="5"/>
+      <rect x="328" y="34" width="60" height="60" rx="5"/>
+    </g>
+    <g fill="#6FB0EE" opacity="0.45">
+      <rect x="40" y="46" width="62" height="6" rx="3"/>
+      <rect x="140" y="46" width="62" height="6" rx="3"/>
+      <rect x="240" y="46" width="62" height="6" rx="3"/>
+      <rect x="340" y="46" width="36" height="6" rx="3"/>
+    </g>
+    <g fill="#D9B56A" opacity="0.8">
+      <rect x="404" y="40" width="10" height="48" rx="3"/>
+      <rect x="420" y="40" width="10" height="48" rx="3"/>
+    </g>
+  </g>
+</svg>
