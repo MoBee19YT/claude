@@ -1,1 +1,0 @@
-"""Qompify demo backend."""
