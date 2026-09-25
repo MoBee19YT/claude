@@ -1,0 +1,1175 @@
+{
+  "_note": "Demo data. Products and specs are modelled on real hardware; shops, prices and EANs are fictional.",
+  "categories": [
+    {
+      "slug": "cpu",
+      "name": "Processors",
+      "icon": "cpu",
+      "description": "Performance, cores, value",
+      "aspects": [
+        {
+          "label": "Performance",
+          "key": "perf_score"
+        },
+        {
+          "label": "Power",
+          "key": "max_power"
+        },
+        {
+          "label": "Price",
+          "key": "price"
+        }
+      ],
+      "specs": [
+        {
+          "key": "cores",
+          "label": "Cores",
+          "unit": null,
+          "better": "higher",
+          "section": "Cores & clocks",
+          "headline": true
+        },
+        {
+          "key": "threads",
+          "label": "Threads",
+          "unit": null,
+          "better": "higher",
+          "section": "Cores & clocks",
+          "headline": false
+        },
+        {
+          "key": "base_clock",
+          "label": "Base clock",
+          "unit": "GHz",
+          "better": "higher",
+          "section": "Cores & clocks",
+          "headline": false
+        },
+        {
+          "key": "boost_clock",
+          "label": "Boost clock",
+          "unit": "GHz",
+          "better": "higher",
+          "section": "Cores & clocks",
+          "headline": true
+        },
+        {
+          "key": "cache",
+          "label": "L3 cache",
+          "unit": "MB",
+          "better": "higher",
+          "section": "Cores & clocks",
+          "headline": false
+        },
+        {
+          "key": "tdp",
+          "label": "TDP",
+          "unit": "W",
+          "better": "lower",
+          "section": "Power",
+          "headline": true
+        },
+        {
+          "key": "max_power",
+          "label": "Max. package power",
+          "unit": "W",
+          "better": "lower",
+          "section": "Power",
+          "headline": false
+        },
+        {
+          "key": "socket",
+          "label": "Socket",
+          "unit": null,
+          "better": null,
+          "section": "Platform",
+          "headline": false
+        },
+        {
+          "key": "memory",
+          "label": "Memory support",
+          "unit": null,
+          "better": null,
+          "section": "Platform",
+          "headline": false
+        },
+        {
+          "key": "igpu",
+          "label": "Integrated graphics",
+          "unit": null,
+          "better": null,
+          "section": "Platform",
+          "headline": false
+        },
+        {
+          "key": "perf_score",
+          "label": "Gaming index",
+          "unit": null,
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        },
+        {
+          "key": "multi_score",
+          "label": "Multi-core index",
+          "unit": null,
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        }
+      ]
+    },
+    {
+      "slug": "gpu",
+      "name": "Graphics Cards",
+      "icon": "gpu",
+      "description": "FPS, VRAM, benchmarks",
+      "aspects": [
+        {
+          "label": "Performance",
+          "key": "perf_score"
+        },
+        {
+          "label": "Price",
+          "key": "price"
+        },
+        {
+          "label": "Value",
+          "key": "value",
+          "basis": "perf_score"
+        }
+      ],
+      "specs": [
+        {
+          "key": "vram",
+          "label": "Video memory",
+          "unit": "GB",
+          "better": "higher",
+          "section": "Memory",
+          "headline": true
+        },
+        {
+          "key": "memory_type",
+          "label": "Memory type",
+          "unit": null,
+          "better": null,
+          "section": "Memory",
+          "headline": false
+        },
+        {
+          "key": "memory_bus",
+          "label": "Memory bus",
+          "unit": "bit",
+          "better": "higher",
+          "section": "Memory",
+          "headline": false
+        },
+        {
+          "key": "boost_clock",
+          "label": "Boost clock",
+          "unit": "MHz",
+          "better": "higher",
+          "section": "Core",
+          "headline": false
+        },
+        {
+          "key": "tdp",
+          "label": "Board power",
+          "unit": "W",
+          "better": "lower",
+          "section": "Power",
+          "headline": true
+        },
+        {
+          "key": "perf_score",
+          "label": "Performance index",
+          "unit": null,
+          "better": "higher",
+          "section": "Performance",
+          "headline": true
+        },
+        {
+          "key": "fps_1440p",
+          "label": "Avg. FPS at 1440p",
+          "unit": "fps",
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        },
+        {
+          "key": "rt_score",
+          "label": "Ray tracing index",
+          "unit": null,
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        }
+      ]
+    },
+    {
+      "slug": "ram",
+      "name": "RAM",
+      "icon": "ram",
+      "description": "Speed, capacity, type",
+      "aspects": [
+        {
+          "label": "Performance",
+          "key": "speed"
+        },
+        {
+          "label": "Multitasking",
+          "key": "capacity"
+        },
+        {
+          "label": "Price",
+          "key": "price"
+        }
+      ],
+      "specs": [
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "unit": "GB",
+          "better": "higher",
+          "section": "Kit",
+          "headline": true
+        },
+        {
+          "key": "kit",
+          "label": "Modules",
+          "unit": null,
+          "better": null,
+          "section": "Kit",
+          "headline": false
+        },
+        {
+          "key": "type",
+          "label": "Type",
+          "unit": null,
+          "better": null,
+          "section": "Kit",
+          "headline": true
+        },
+        {
+          "key": "speed",
+          "label": "Speed",
+          "unit": "MT/s",
+          "better": "higher",
+          "section": "Timings",
+          "headline": true
+        },
+        {
+          "key": "cas_latency",
+          "label": "CAS latency",
+          "unit": "CL",
+          "better": "lower",
+          "section": "Timings",
+          "headline": false
+        },
+        {
+          "key": "voltage",
+          "label": "Voltage",
+          "unit": "V",
+          "better": null,
+          "section": "Timings",
+          "headline": false
+        },
+        {
+          "key": "profile",
+          "label": "Overclock profile",
+          "unit": null,
+          "better": null,
+          "section": "Features",
+          "headline": false
+        }
+      ]
+    },
+    {
+      "slug": "storage",
+      "name": "Storage",
+      "icon": "storage",
+      "description": "SSD, HDD, speed",
+      "aspects": [
+        {
+          "label": "Speed",
+          "key": "read_speed"
+        },
+        {
+          "label": "Capacity",
+          "key": "capacity"
+        },
+        {
+          "label": "Price",
+          "key": "price"
+        }
+      ],
+      "specs": [
+        {
+          "key": "type",
+          "label": "Drive type",
+          "unit": null,
+          "better": null,
+          "section": "Drive",
+          "headline": true
+        },
+        {
+          "key": "capacity",
+          "label": "Capacity",
+          "unit": null,
+          "better": "higher",
+          "section": "Drive",
+          "headline": true
+        },
+        {
+          "key": "interface",
+          "label": "Interface",
+          "unit": null,
+          "better": null,
+          "section": "Drive",
+          "headline": false
+        },
+        {
+          "key": "read_speed",
+          "label": "Sequential read",
+          "unit": "MB/s",
+          "better": "higher",
+          "section": "Performance",
+          "headline": true
+        },
+        {
+          "key": "write_speed",
+          "label": "Sequential write",
+          "unit": "MB/s",
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        },
+        {
+          "key": "endurance",
+          "label": "Endurance",
+          "unit": "TBW",
+          "better": "higher",
+          "section": "Reliability",
+          "headline": false
+        },
+        {
+          "key": "warranty",
+          "label": "Warranty",
+          "unit": "years",
+          "better": "higher",
+          "section": "Reliability",
+          "headline": false
+        }
+      ]
+    },
+    {
+      "slug": "monitor",
+      "name": "Monitors",
+      "icon": "monitor",
+      "description": "Size, refresh rate, panel",
+      "aspects": [
+        {
+          "label": "Smoothness",
+          "key": "refresh_rate"
+        },
+        {
+          "label": "Response",
+          "key": "response_time"
+        },
+        {
+          "label": "Price",
+          "key": "price"
+        }
+      ],
+      "specs": [
+        {
+          "key": "size",
+          "label": "Screen size",
+          "unit": "in",
+          "better": "higher",
+          "section": "Display",
+          "headline": true
+        },
+        {
+          "key": "resolution",
+          "label": "Resolution",
+          "unit": null,
+          "better": null,
+          "section": "Display",
+          "headline": true
+        },
+        {
+          "key": "refresh_rate",
+          "label": "Refresh rate",
+          "unit": "Hz",
+          "better": "higher",
+          "section": "Motion",
+          "headline": true
+        },
+        {
+          "key": "response_time",
+          "label": "Response time",
+          "unit": "ms",
+          "better": "lower",
+          "section": "Motion",
+          "headline": false
+        },
+        {
+          "key": "panel",
+          "label": "Panel",
+          "unit": null,
+          "better": null,
+          "section": "Display",
+          "headline": false
+        },
+        {
+          "key": "hdr",
+          "label": "HDR",
+          "unit": null,
+          "better": null,
+          "section": "Features",
+          "headline": false
+        },
+        {
+          "key": "adaptive_sync",
+          "label": "Adaptive sync",
+          "unit": null,
+          "better": null,
+          "section": "Features",
+          "headline": false
+        }
+      ]
+    },
+    {
+      "slug": "laptop",
+      "name": "Laptops",
+      "icon": "laptop",
+      "description": "Performance, battery, build",
+      "aspects": [
+        {
+          "label": "Performance",
+          "key": "perf_score"
+        },
+        {
+          "label": "Battery",
+          "key": "battery"
+        },
+        {
+          "label": "Price",
+          "key": "price"
+        }
+      ],
+      "specs": [
+        {
+          "key": "cpu",
+          "label": "Processor",
+          "unit": null,
+          "better": null,
+          "section": "Performance",
+          "headline": true
+        },
+        {
+          "key": "gpu",
+          "label": "Graphics",
+          "unit": null,
+          "better": null,
+          "section": "Performance",
+          "headline": true
+        },
+        {
+          "key": "ram",
+          "label": "Memory",
+          "unit": "GB",
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        },
+        {
+          "key": "storage",
+          "label": "Storage",
+          "unit": null,
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        },
+        {
+          "key": "perf_score",
+          "label": "Performance index",
+          "unit": null,
+          "better": "higher",
+          "section": "Performance",
+          "headline": false
+        },
+        {
+          "key": "display",
+          "label": "Display",
+          "unit": null,
+          "better": null,
+          "section": "Build",
+          "headline": true
+        },
+        {
+          "key": "battery",
+          "label": "Battery",
+          "unit": "Wh",
+          "better": "higher",
+          "section": "Build",
+          "headline": false
+        },
+        {
+          "key": "weight",
+          "label": "Weight",
+          "unit": "kg",
+          "better": "lower",
+          "section": "Build",
+          "headline": false
+        }
+      ]
+    }
+  ],
+  "products": [
+    {
+      "slug": "geforce-rtx-4070",
+      "name": "GeForce RTX 4070",
+      "brand": "NVIDIA",
+      "category": "gpu",
+      "year": 2023,
+      "popularity": 98,
+      "image": "assets/gpu-rtx.svg",
+      "summary": "A 1440p card with DLSS 3 frame generation and modest 200 W power draw.",
+      "specs": {
+        "vram": 12,
+        "memory_type": "GDDR6X",
+        "memory_bus": 192,
+        "boost_clock": 2475,
+        "tdp": 200,
+        "perf_score": 100,
+        "fps_1440p": 98,
+        "rt_score": 100
+      },
+      "ean": "2000000010014"
+    },
+    {
+      "slug": "geforce-rtx-4060-ti",
+      "name": "GeForce RTX 4060 Ti",
+      "brand": "NVIDIA",
+      "category": "gpu",
+      "year": 2023,
+      "popularity": 84,
+      "image": "assets/gpu-rtx.svg",
+      "summary": "Strong 1080p performer; the 8 GB of VRAM is its main limit at higher settings.",
+      "specs": {
+        "vram": 8,
+        "memory_type": "GDDR6",
+        "memory_bus": 128,
+        "boost_clock": 2535,
+        "tdp": 160,
+        "perf_score": 78,
+        "fps_1440p": 76,
+        "rt_score": 76
+      },
+      "ean": "2000000010021"
+    },
+    {
+      "slug": "geforce-rtx-4060",
+      "name": "GeForce RTX 4060",
+      "brand": "NVIDIA",
+      "category": "gpu",
+      "year": 2023,
+      "popularity": 80,
+      "image": "assets/gpu-rtx.svg",
+      "summary": "Efficient entry card for 1080p gaming at just 115 W.",
+      "specs": {
+        "vram": 8,
+        "memory_type": "GDDR6",
+        "memory_bus": 128,
+        "boost_clock": 2460,
+        "tdp": 115,
+        "perf_score": 64,
+        "fps_1440p": 62,
+        "rt_score": 62
+      },
+      "ean": "2000000010038"
+    },
+    {
+      "slug": "radeon-rx-7800-xt",
+      "name": "Radeon RX 7800 XT",
+      "brand": "AMD",
+      "category": "gpu",
+      "year": 2023,
+      "popularity": 91,
+      "image": "assets/gpu-rx.svg",
+      "summary": "16 GB of VRAM and excellent raster performance for 1440p.",
+      "specs": {
+        "vram": 16,
+        "memory_type": "GDDR6",
+        "memory_bus": 256,
+        "boost_clock": 2430,
+        "tdp": 263,
+        "perf_score": 103,
+        "fps_1440p": 101,
+        "rt_score": 82
+      },
+      "ean": "2000000010045"
+    },
+    {
+      "slug": "radeon-rx-7600",
+      "name": "Radeon RX 7600",
+      "brand": "AMD",
+      "category": "gpu",
+      "year": 2023,
+      "popularity": 70,
+      "image": "assets/gpu-rx.svg",
+      "summary": "Budget 1080p card with solid raster performance for the price.",
+      "specs": {
+        "vram": 8,
+        "memory_type": "GDDR6",
+        "memory_bus": 128,
+        "boost_clock": 2655,
+        "tdp": 165,
+        "perf_score": 60,
+        "fps_1440p": 58,
+        "rt_score": 45
+      },
+      "ean": "2000000010052"
+    },
+    {
+      "slug": "ryzen-5-7600",
+      "name": "Ryzen 5 7600",
+      "brand": "AMD",
+      "category": "cpu",
+      "year": 2023,
+      "popularity": 95,
+      "image": "assets/cpu-box-amd.svg",
+      "summary": "Six fast Zen 4 cores on the AM5 platform, with a cooler in the box.",
+      "specs": {
+        "cores": 6,
+        "threads": 12,
+        "base_clock": 3.8,
+        "boost_clock": 5.1,
+        "cache": 32,
+        "tdp": 65,
+        "max_power": 88,
+        "socket": "AM5",
+        "memory": "DDR5",
+        "igpu": "Radeon Graphics",
+        "perf_score": 100,
+        "multi_score": 100
+      },
+      "ean": "2000000010069"
+    },
+    {
+      "slug": "ryzen-7-7700",
+      "name": "Ryzen 7 7700",
+      "brand": "AMD",
+      "category": "cpu",
+      "year": 2023,
+      "popularity": 74,
+      "image": "assets/cpu-box-amd.svg",
+      "summary": "Eight Zen 4 cores at 65 W — a quiet all-rounder for gaming and creative work.",
+      "specs": {
+        "cores": 8,
+        "threads": 16,
+        "base_clock": 3.8,
+        "boost_clock": 5.3,
+        "cache": 32,
+        "tdp": 65,
+        "max_power": 88,
+        "socket": "AM5",
+        "memory": "DDR5",
+        "igpu": "Radeon Graphics",
+        "perf_score": 106,
+        "multi_score": 131
+      },
+      "ean": "2000000010076"
+    },
+    {
+      "slug": "ryzen-7-7800x3d",
+      "name": "Ryzen 7 7800X3D",
+      "brand": "AMD",
+      "category": "cpu",
+      "year": 2023,
+      "popularity": 93,
+      "image": "assets/cpu-box-amd.svg",
+      "summary": "96 MB of 3D V-Cache makes it one of the fastest gaming CPUs available.",
+      "specs": {
+        "cores": 8,
+        "threads": 16,
+        "base_clock": 4.2,
+        "boost_clock": 5.0,
+        "cache": 96,
+        "tdp": 120,
+        "max_power": 162,
+        "socket": "AM5",
+        "memory": "DDR5",
+        "igpu": "Radeon Graphics",
+        "perf_score": 128,
+        "multi_score": 132
+      },
+      "ean": "2000000010083"
+    },
+    {
+      "slug": "core-i5-13400f",
+      "name": "Intel Core i5-13400F",
+      "brand": "Intel",
+      "category": "cpu",
+      "year": 2023,
+      "popularity": 88,
+      "image": "assets/cpu-box-intel.svg",
+      "summary": "Ten cores (6P + 4E) at a low price; the F suffix means no integrated graphics.",
+      "specs": {
+        "cores": 10,
+        "threads": 16,
+        "base_clock": 2.5,
+        "boost_clock": 4.6,
+        "cache": 20,
+        "tdp": 65,
+        "max_power": 148,
+        "socket": "LGA1700",
+        "memory": "DDR4 / DDR5",
+        "igpu": "None",
+        "perf_score": 92,
+        "multi_score": 104
+      },
+      "ean": "2000000010090"
+    },
+    {
+      "slug": "core-i7-14700k",
+      "name": "Intel Core i7-14700K",
+      "brand": "Intel",
+      "category": "cpu",
+      "year": 2023,
+      "popularity": 81,
+      "image": "assets/cpu-box-intel.svg",
+      "summary": "Twenty cores for heavy multitasking, with power draw to match.",
+      "specs": {
+        "cores": 20,
+        "threads": 28,
+        "base_clock": 3.4,
+        "boost_clock": 5.6,
+        "cache": 33,
+        "tdp": 125,
+        "max_power": 253,
+        "socket": "LGA1700",
+        "memory": "DDR4 / DDR5",
+        "igpu": "Intel UHD 770",
+        "perf_score": 121,
+        "multi_score": 208
+      },
+      "ean": "2000000010106"
+    },
+    {
+      "slug": "corsair-vengeance-32gb-ddr5-6000",
+      "name": "Corsair Vengeance 32GB DDR5-6000",
+      "brand": "Corsair",
+      "category": "ram",
+      "year": 2023,
+      "popularity": 90,
+      "image": "assets/ram-black.svg",
+      "summary": "A 2 × 16 GB kit at the DDR5-6000 sweet spot for current platforms.",
+      "specs": {
+        "capacity": 32,
+        "kit": "2 × 16 GB",
+        "type": "DDR5",
+        "speed": 6000,
+        "cas_latency": 36,
+        "voltage": 1.35,
+        "profile": "Intel XMP 3.0"
+      },
+      "ean": "2000000010113"
+    },
+    {
+      "slug": "kingston-fury-beast-16gb-ddr5",
+      "name": "Kingston Fury Beast 16GB DDR5",
+      "brand": "Kingston",
+      "category": "ram",
+      "year": 2022,
+      "popularity": 77,
+      "image": "assets/ram-silver.svg",
+      "summary": "An affordable 2 × 8 GB DDR5 kit for everyday and entry gaming builds.",
+      "specs": {
+        "capacity": 16,
+        "kit": "2 × 8 GB",
+        "type": "DDR5",
+        "speed": 5200,
+        "cas_latency": 40,
+        "voltage": 1.25,
+        "profile": "Intel XMP 3.0 / AMD EXPO"
+      },
+      "ean": "2000000010120"
+    },
+    {
+      "slug": "kingston-fury-beast-32gb-ddr5-6000",
+      "name": "Kingston Fury Beast 32GB DDR5-6000",
+      "brand": "Kingston",
+      "category": "ram",
+      "year": 2023,
+      "popularity": 72,
+      "image": "assets/ram-black.svg",
+      "summary": "Low-latency CL30 kit with an AMD EXPO profile for AM5 builds.",
+      "specs": {
+        "capacity": 32,
+        "kit": "2 × 16 GB",
+        "type": "DDR5",
+        "speed": 6000,
+        "cas_latency": 30,
+        "voltage": 1.4,
+        "profile": "AMD EXPO"
+      },
+      "ean": "2000000010137"
+    },
+    {
+      "slug": "samsung-990-pro-2tb",
+      "name": "Samsung 990 Pro 2TB",
+      "brand": "Samsung",
+      "category": "storage",
+      "year": 2022,
+      "popularity": 89,
+      "image": null,
+      "summary": "Top-tier PCIe 4.0 NVMe drive with 1,200 TBW endurance.",
+      "specs": {
+        "type": "NVMe SSD",
+        "capacity": [
+          2000,
+          "2 TB"
+        ],
+        "interface": "PCIe 4.0 x4",
+        "read_speed": 7450,
+        "write_speed": 6900,
+        "endurance": 1200,
+        "warranty": 5
+      },
+      "ean": "2000000010144"
+    },
+    {
+      "slug": "wd-black-sn850x-1tb",
+      "name": "WD Black SN850X 1TB",
+      "brand": "Western Digital",
+      "category": "storage",
+      "year": 2022,
+      "popularity": 85,
+      "image": null,
+      "summary": "Fast PCIe 4.0 gaming SSD, also compatible with PlayStation 5.",
+      "specs": {
+        "type": "NVMe SSD",
+        "capacity": [
+          1000,
+          "1 TB"
+        ],
+        "interface": "PCIe 4.0 x4",
+        "read_speed": 7300,
+        "write_speed": 6300,
+        "endurance": 600,
+        "warranty": 5
+      },
+      "ean": "2000000010151"
+    },
+    {
+      "slug": "crucial-p3-plus-1tb",
+      "name": "Crucial P3 Plus 1TB",
+      "brand": "Crucial",
+      "category": "storage",
+      "year": 2022,
+      "popularity": 71,
+      "image": null,
+      "summary": "Budget PCIe 4.0 drive — plenty fast for games and applications.",
+      "specs": {
+        "type": "NVMe SSD",
+        "capacity": [
+          1000,
+          "1 TB"
+        ],
+        "interface": "PCIe 4.0 x4",
+        "read_speed": 5000,
+        "write_speed": 3600,
+        "endurance": 220,
+        "warranty": 5
+      },
+      "ean": "2000000010168"
+    },
+    {
+      "slug": "seagate-barracuda-2tb",
+      "name": "Seagate BarraCuda 2TB",
+      "brand": "Seagate",
+      "category": "storage",
+      "year": 2019,
+      "popularity": 58,
+      "image": null,
+      "summary": "3.5-inch 7,200 rpm hard drive for inexpensive bulk storage.",
+      "specs": {
+        "type": "HDD",
+        "capacity": [
+          2000,
+          "2 TB"
+        ],
+        "interface": "SATA III",
+        "read_speed": 220,
+        "write_speed": 220,
+        "endurance": "—",
+        "warranty": 2
+      },
+      "ean": "2000000010175"
+    },
+    {
+      "slug": "lg-ultragear-27gp850",
+      "name": "LG UltraGear 27GP850",
+      "brand": "LG",
+      "category": "monitor",
+      "year": 2021,
+      "popularity": 83,
+      "image": null,
+      "summary": "27-inch 1440p Nano IPS with fast 1 ms response and wide colour gamut.",
+      "specs": {
+        "size": 27,
+        "resolution": "2560 × 1440",
+        "refresh_rate": 165,
+        "response_time": 1,
+        "panel": "Nano IPS",
+        "hdr": "HDR400",
+        "adaptive_sync": "FreeSync Premium, G-Sync compatible"
+      },
+      "ean": "2000000010182"
+    },
+    {
+      "slug": "dell-s2722dgm",
+      "name": "Dell S2722DGM 27\"",
+      "brand": "Dell",
+      "category": "monitor",
+      "year": 2021,
+      "popularity": 76,
+      "image": null,
+      "summary": "Curved 27-inch 1440p VA panel with deep contrast for the price.",
+      "specs": {
+        "size": 27,
+        "resolution": "2560 × 1440",
+        "refresh_rate": 165,
+        "response_time": 2,
+        "panel": "VA (curved)",
+        "hdr": "None",
+        "adaptive_sync": "FreeSync Premium, G-Sync compatible"
+      },
+      "ean": "2000000010199"
+    },
+    {
+      "slug": "aoc-24g2spu",
+      "name": "AOC 24G2SPU",
+      "brand": "AOC",
+      "category": "monitor",
+      "year": 2022,
+      "popularity": 68,
+      "image": null,
+      "summary": "24-inch 1080p IPS at 165 Hz — an easy budget pick for esports.",
+      "specs": {
+        "size": 24,
+        "resolution": "1920 × 1080",
+        "refresh_rate": 165,
+        "response_time": 1,
+        "panel": "IPS",
+        "hdr": "None",
+        "adaptive_sync": "FreeSync"
+      },
+      "ean": "2000000010205"
+    },
+    {
+      "slug": "lenovo-legion-slim-5",
+      "name": "Lenovo Legion Slim 5",
+      "brand": "Lenovo",
+      "category": "laptop",
+      "year": 2023,
+      "popularity": 82,
+      "image": null,
+      "summary": "16-inch 165 Hz gaming laptop with RTX 4060 in a relatively slim chassis.",
+      "specs": {
+        "cpu": "Ryzen 7 7840HS",
+        "gpu": "GeForce RTX 4060 8 GB",
+        "ram": 16,
+        "storage": [
+          1000,
+          "1 TB SSD"
+        ],
+        "perf_score": 100,
+        "display": "16\" 2560 × 1600, 165 Hz",
+        "battery": 80,
+        "weight": 2.4
+      },
+      "ean": "2000000010212"
+    },
+    {
+      "slug": "asus-tuf-gaming-a15",
+      "name": "ASUS TUF Gaming A15",
+      "brand": "ASUS",
+      "category": "laptop",
+      "year": 2023,
+      "popularity": 79,
+      "image": null,
+      "summary": "Rugged 15.6-inch gaming laptop with a large 90 Wh battery.",
+      "specs": {
+        "cpu": "Ryzen 7 7735HS",
+        "gpu": "GeForce RTX 4050 6 GB",
+        "ram": 16,
+        "storage": [
+          512,
+          "512 GB SSD"
+        ],
+        "perf_score": 84,
+        "display": "15.6\" 1920 × 1080, 144 Hz",
+        "battery": 90,
+        "weight": 2.2
+      },
+      "ean": "2000000010229"
+    },
+    {
+      "slug": "acer-nitro-v-15",
+      "name": "Acer Nitro V 15",
+      "brand": "Acer",
+      "category": "laptop",
+      "year": 2023,
+      "popularity": 66,
+      "image": null,
+      "summary": "Entry gaming laptop with RTX 4050 at an accessible price.",
+      "specs": {
+        "cpu": "Intel Core i5-13420H",
+        "gpu": "GeForce RTX 4050 6 GB",
+        "ram": 16,
+        "storage": [
+          512,
+          "512 GB SSD"
+        ],
+        "perf_score": 78,
+        "display": "15.6\" 1920 × 1080, 144 Hz",
+        "battery": 57,
+        "weight": 2.1
+      },
+      "ean": "2000000010236"
+    }
+  ],
+  "shops": [
+    {
+      "slug": "technova",
+      "name": "TechNova",
+      "website": "https://technova.example",
+      "rating": 4.7,
+      "feed": "data/feeds/technova.xml"
+    },
+    {
+      "slug": "pcmarket",
+      "name": "PC Market",
+      "website": "https://pcmarket.example",
+      "rating": 4.5,
+      "feed": "data/feeds/pcmarket.xml"
+    },
+    {
+      "slug": "bytehouse",
+      "name": "ByteHouse",
+      "website": "https://bytehouse.example",
+      "rating": 4.8,
+      "feed": "data/feeds/bytehouse.xml"
+    },
+    {
+      "slug": "megacomponents",
+      "name": "MegaComponents",
+      "website": "https://megacomponents.example",
+      "rating": 4.3,
+      "feed": "data/feeds/megacomponents.xml"
+    }
+  ],
+  "comparisons": [
+    {
+      "slug": "rtx-4070-vs-rx-7800-xt",
+      "title": "RTX 4070 vs RX 7800 XT",
+      "category": "gpu",
+      "featured_rank": 1,
+      "description": "Which card gives you better performance for the price?",
+      "products": [
+        "geforce-rtx-4070",
+        "radeon-rx-7800-xt"
+      ]
+    },
+    {
+      "slug": "ryzen-5-7600-vs-core-i5-13400f",
+      "title": "Ryzen 5 7600 vs Intel i5-13400F",
+      "category": "cpu",
+      "featured_rank": 2,
+      "description": "Gaming, productivity and overall value compared.",
+      "products": [
+        "ryzen-5-7600",
+        "core-i5-13400f"
+      ]
+    },
+    {
+      "slug": "32gb-vs-16gb-ram",
+      "title": "32GB vs 16GB RAM",
+      "category": "ram",
+      "featured_rank": 3,
+      "description": "Is 16GB enough or should you go for 32GB?",
+      "products": [
+        "corsair-vengeance-32gb-ddr5-6000",
+        "kingston-fury-beast-16gb-ddr5"
+      ]
+    },
+    {
+      "slug": "990-pro-vs-sn850x",
+      "title": "Samsung 990 Pro vs WD Black SN850X",
+      "category": "storage",
+      "featured_rank": null,
+      "description": "Two flagship PCIe 4.0 drives, head to head.",
+      "products": [
+        "samsung-990-pro-2tb",
+        "wd-black-sn850x-1tb"
+      ]
+    },
+    {
+      "slug": "legion-slim-5-vs-tuf-a15",
+      "title": "Legion Slim 5 vs TUF Gaming A15",
+      "category": "laptop",
+      "featured_rank": null,
+      "description": "More performance, or a bigger battery for less?",
+      "products": [
+        "lenovo-legion-slim-5",
+        "asus-tuf-gaming-a15"
+      ]
+    }
+  ],
+  "articles": [
+    {
+      "slug": "how-much-ram-do-you-need-2026",
+      "title": "How much RAM do you actually need in 2026?",
+      "tag": "Memory",
+      "read_minutes": 6,
+      "published_on": "2026-03-18",
+      "image": "assets/art-ram.svg",
+      "excerpt": "Where 16GB still holds up, and when the jump to 32GB is worth paying for.",
+      "body": "For most people buying a new desktop in 2026, **32GB of DDR5 is the sensible default**, and 16GB is still workable if the budget is tight.\n\n## 16GB: enough for everyday use and most games\nBrowsing, office work, streaming and the majority of current games run comfortably in 16GB. The limit shows up when you stack workloads: a game plus a browser with dozens of tabs plus voice chat can push a 16GB system into swapping to disk, which is when stutters appear.\n\n## 32GB: headroom for heavier games and multitasking\nNewer open-world games increasingly use more than 16GB on their own, and creative work such as photo editing, 4K video timelines or running virtual machines benefits directly from more memory. The price gap between 16GB and 32GB kits has narrowed enough that 32GB is usually the better long-term buy.\n\n## 64GB and beyond\nOnly worth it for specific workloads: large video projects, 3D rendering, big datasets or several virtual machines at once.\n\n## Capacity matters more than speed\nRunning out of memory hurts far more than slightly slower memory. On current AMD and Intel platforms DDR5-6000 is a good target; beyond that, gains in games are small. Always buy a matched kit of two modules so the memory runs in dual-channel mode."
+    },
+    {
+      "slug": "gpu-vram-explained",
+      "title": "GPU VRAM explained",
+      "tag": "Graphics",
+      "read_minutes": 8,
+      "published_on": "2026-03-04",
+      "image": "assets/art-gpu.svg",
+      "excerpt": "What video memory does, how much your resolution needs, and what it does not fix.",
+      "body": "VRAM (video memory) is the graphics card's own high-speed memory. It holds everything the GPU needs close at hand while drawing a frame: textures, geometry and the frame buffers themselves.\n\n## What uses VRAM\nTexture quality is the biggest consumer, followed by resolution and features such as ray tracing and frame generation. Higher resolutions need larger frame buffers, and higher texture settings load more detailed assets.\n\n## What happens when you run out\nThe card has to fetch data from system RAM over the much slower PCIe bus. The result is usually not a lower average frame rate but stutter, texture pop-in, or textures that stay blurry.\n\n## How much do you need?\n- **1080p:** 8GB works, though some recent games need texture settings lowered.\n- **1440p:** 12GB is a comfortable target.\n- **4K:** 16GB or more.\n\n## What VRAM does not fix\nMore memory does not make a slower GPU faster. A card with 16GB and a weaker chip will still lose to a stronger 12GB card whenever memory is not the bottleneck. Compare real performance first, then check that the memory is enough for your resolution."
+    },
+    {
+      "slug": "choosing-a-cpu",
+      "title": "What matters most when choosing a CPU?",
+      "tag": "Processors",
+      "read_minutes": 7,
+      "published_on": "2026-02-20",
+      "image": "assets/art-cpu.svg",
+      "excerpt": "Cores, clocks, cache and power draw — ranked by how much they change daily use.",
+      "body": "Spec sheets list a lot of numbers. Here they are, ranked by how much they change day-to-day use.\n\n## 1. Platform and upgrade path\nThe socket decides which motherboards and future CPUs you can use. AMD's AM5 supports DDR5 only; Intel's LGA1700 supports both DDR4 and DDR5. Check the platform before comparing anything else.\n\n## 2. Performance in your workload\nGames favour fast individual cores and large caches, which is why chips with extra cache, such as AMD's X3D models, do so well in gaming. Rendering, compiling code and video export scale with core count instead.\n\n## 3. Core count\nSix modern cores are enough for gaming. Eight or more help if you stream, edit video or run heavy multitasking.\n\n## 4. Power and cooling\nTDP is a guideline, not a measurement. Look at the maximum package power: a chip that can draw 250 W needs a much stronger cooler and power supply than one that tops out under 100 W.\n\n## 5. Clock speed\nUseful only for comparing chips of the same generation and brand. Across different architectures, the clock number on its own says little about real performance."
+    },
+    {
+      "slug": "ssd-vs-hdd",
+      "title": "SSD vs HDD: what's the difference?",
+      "tag": "Storage",
+      "read_minutes": 5,
+      "published_on": "2026-02-06",
+      "image": "assets/art-ssd.svg",
+      "excerpt": "Speed, lifespan and cost per terabyte, and where each type still makes sense.",
+      "body": "## How they work\nA hard disk drive (HDD) stores data on spinning magnetic platters read by a moving head. A solid-state drive (SSD) stores data on flash memory chips and has no moving parts.\n\n## Speed\nThis is the headline difference. A typical HDD reads around 150–250 MB/s. A SATA SSD reaches about 550 MB/s, and an NVMe SSD on PCIe 4.0 can exceed 7,000 MB/s. Random access, where hard drives are weakest, matters even more than sequential speed: it is why an SSD makes a system boot, open applications and load games so much faster.\n\n## Lifespan and reliability\nSSDs are rated in terabytes written (TBW). A typical 1TB drive is rated for several hundred TBW, far more than most home users will ever write. Hard drives have moving parts, so they are more sensitive to knocks and mechanical wear.\n\n## Cost per terabyte\nHard drives still win here, especially above 4TB.\n\n## Which should you buy?\nUse an NVMe SSD for your operating system, applications and games. Add a hard drive only if you need cheap bulk storage for media archives or backups."
+    }
+  ]
+}

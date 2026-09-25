@@ -1,149 +1,147 @@
-# ParkScope
+# Qompify API — backend demo
 
-A live map of real parking — free, paid, resident, EV and accessible — built
-from OpenStreetMap data. Two files, both free to host:
+A FastAPI + SQL backend for **Qompify**, the hardware comparison site
+([frontend repo](https://github.com/MoBee19YT/Qompify-Frontend)). It serves categories, products,
+shop prices, price history, search, comparisons and articles as JSON.
 
-| File | What it is | Where it goes |
-| --- | --- | --- |
-| `index.html` | The whole app. No build step, no dependencies to install. | GitHub Pages |
-| `worker/index.js` | The whole backend. No dependencies, nothing to compile. | Cloudflare Workers (free plan) |
+## Quick start
 
-**Nothing is invented.** If OpenStreetMap doesn't record a price, capacity or
-opening hours, the app says "Information unavailable" rather than guessing. It
-never claims to know how full a car park is, because that data doesn't exist
-in the source.
+Needs Python 3.10 or newer.
 
----
-
-## Setup
-
-### 1. Deploy the backend to Cloudflare (about 3 minutes)
-
-1. Sign in at [dash.cloudflare.com](https://dash.cloudflare.com) (the free plan
-   is plenty — no card needed).
-2. **Compute (Workers)** → **Create** → **Start with Hello World** → **Deploy**.
-3. Open the new Worker → **Edit code**.
-4. Delete everything in the editor, paste the entire contents of
-   `worker/index.js`, and click **Deploy**.
-5. Copy the Worker's address — it looks like
-   `https://parkscope.your-name.workers.dev`.
-
-Check it works by opening `https://your-worker-address/api/health` in a
-browser. You should see `{"name":"ParkScope API","status":"ok",...}`.
-
-*Prefer the command line?* `cd worker && npx wrangler deploy` does the same
-thing using `wrangler.toml`.
-
-### 2. Point the app at your backend
-
-Open `index.html`, find this line near the top of the `<script>` block, and
-paste your Worker address between the quotes:
-
-```js
-const WORKER_URL = "https://parkscope.YOUR-SUBDOMAIN.workers.dev";
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-Commit and push. That's the only edit you ever need to make.
+Open **http://127.0.0.1:8000/docs** for interactive docs, where you can try every endpoint.
+The first start creates `qompify.db` (SQLite) and fills it with the demo data.
 
-### 3. Turn on GitHub Pages
+## Where the data comes from
 
-Repo **Settings** → **Pages** → **Source: GitHub Actions**. The included
-workflow publishes `index.html` on every push, and your site appears at
-`https://your-username.github.io/your-repo/`.
+```
+data/catalog.json   ──►  categories, products, specs, comparisons, articles
+data/feeds/*.xml    ──►  offers (each shop's price)  ──►  price_history (daily lowest)
+```
 
-### Running it locally
+Prices come from **shop product feeds**, the same way Heureka gets them: each shop publishes
+an XML file listing its products and prices, and Qompify imports it. Feed items are matched to
+products by EAN barcode. This is more reliable than scraping shop pages, which breaks whenever a
+layout changes and usually goes against the shop's terms.
 
-No tooling required — open `index.html` in a browser. To try a backend without
-editing the file, append `?api=https://your-worker.workers.dev` to the address.
+The demo ships feeds for four fictional shops. Re-import one, or add a real shop by its feed URL:
 
----
+```bash
+python -m app.ingest.feeds technova                                # re-import a stored feed
+python -m app.ingest.feeds newshop https://newshop.example/feed.xml \
+    --name "New Shop" --website https://newshop.example             # register a new shop
+python -m app.ingest.seed --reset                                  # rebuild the whole database
+```
 
-## How it stays inside the free tiers
+Each import prints a report — new, updated and removed offers, plus items it couldn't match to a
+product. Run the feed command on a schedule (e.g. cron, hourly) to keep prices fresh; each run
+also records that day's lowest price, which builds the price history.
 
-Public OpenStreetMap services will throttle anything that hammers them, and
-this is the part of the design that stops that happening. Five layers, each
-one catching what the previous one missed:
+## Endpoints
 
-1. **A fixed grid.** The map is carved into ~2km cells and the app may only
-   request whole cells — never arbitrary boxes. Two people looking at the same
-   street generate the *identical* URL, so they share a cache entry. With
-   free-form bounding boxes every pixel of panning would be a cache miss.
-2. **The browser cache.** Responses carry a 24-hour `Cache-Control`, so
-   revisiting an area costs nothing at all.
-3. **Cloudflare's edge cache**, shared by every visitor worldwide. OpenStreetMap
-   sees roughly *one* request per cell per day no matter how many people use
-   the app.
-4. **Request coalescing and mirror failover** in the Worker: simultaneous
-   identical requests become one upstream fetch, and three Overpass mirrors are
-   tried in turn.
-5. **Failures are cached briefly** (2 minutes) so an outage can't turn into a
-   retry storm, and the app refuses to fetch at all below zoom 13, where the
-   area would be enormous.
+All endpoints are `GET` and live under `/api`.
 
-Filtering and the "Find parking" ranking both run in the browser on data
-that's already loaded, so they cost zero requests.
+| Endpoint | Returns |
+| --- | --- |
+| `/categories` | The 6 categories with product counts and the cheapest price in each |
+| `/products` | Product cards. Filters: `category`, `brand` (comma-separated), `q`, `min_price`, `max_price`, `in_stock`. `sort`: `popular`, `price_asc`, `price_desc`, `name`, `newest`. Paginated with `page`, `page_size` |
+| `/products/{slug}` | Product page: grouped specs, every shop's offer (cheapest first), price stats, related comparisons |
+| `/products/{slug}/price-history?days=90` | Daily lowest price, oldest first, for a chart |
+| `/search?q=rtx&limit=6` | Search-as-you-type suggestions; an empty `q` returns the most popular products |
+| `/comparisons/popular` | The homepage comparison cards |
+| `/comparisons` · `/comparisons/{slug}` | All editorial comparisons · one with its full result |
+| `/compare?products=a,b` | Compare any 2–4 products from one category: spec table with the best value marked, per-aspect winners and a one-line verdict |
+| `/articles?tag=Memory` · `/articles/{slug}` | Guides, newest first · one guide with its Markdown body |
+| `/shops` | Shops whose feeds are imported, with offer counts and last import time |
+| `/health` | Status and row counts |
 
-A realistic day of personal use lands in the low hundreds of Worker requests —
-against a free allowance of 100,000 per day.
+Errors come back as `{"detail": "..."}` with 404 (unknown slug), 400 (e.g. comparing a GPU with a CPU)
+or 422 (invalid query parameter).
 
----
+## Wiring up the frontend
 
-## What's in the app
-
-- **Colour-coded parking** — free, paid, resident/permit, customers-only,
-  private, no-parking, and unconfirmed. Every status has its own **icon as well
-  as its own colour**, so it's readable if you're colour-blind.
-- **On-street parking as bays** drawn along the correct side of the road, taken
-  from OpenStreetMap's `parking:lane` tags. Streets with parking on both sides
-  get two rows.
-- **Car park footprints** where they're mapped as shapes, with a pin at the
-  centre.
-- **EV and accessible badges** on the pins that have them.
-- **Search** for any place, street or landmark.
-- **Find parking** — ranks what's on screen by distance, price, opening hours
-  and restrictions, and tells you *why* each result ranked where it did.
-- **Details panel** with type, access, price, hours (including whether it's
-  open right now), max stay, capacity, and a navigation hand-off.
-- Works on phones.
-
-### Tuning
-
-Both files have a short configuration block at the top. The useful knobs:
-
-| Where | Setting | Meaning |
+| Homepage section | Endpoint | Notes |
 | --- | --- | --- |
-| `index.html` | `WORKER_URL` | Your backend address |
-| `index.html` | `MIN_ZOOM` | Below this, nothing is fetched (default 13) |
-| `index.html` | `START` | Opening location — defaults to Prague |
-| `worker/index.js` | `CACHE_TTL_SECONDS` | How long a cell stays cached (default 24h) |
-| `worker/index.js` | `OVERPASS_MIRRORS` | Which servers to use, in order |
+| Search bar dropdown | `/search?q=…` | `icon` matches the frontend's icon names (`cpu`, `gpu`, `ram`, …) |
+| Category cards | `/categories` | |
+| Popular comparisons | `/comparisons/popular` | `aspects` is the "Performance · Price · Value" line |
+| Why Qompify? | — | Static text, stays in the frontend |
+| Latest articles & guides | `/articles?limit=4` | |
 
-`GRID_DEG` appears in both files and **must match**, or the cache keys stop
-lining up.
+```js
+const API = "http://127.0.0.1:8000/api";
 
-URL parameters are handy for testing without editing anything:
-`?api=`, `?style=`, `?lat=`, `?lon=`, `?z=`.
+const hits = await fetch(`${API}/search?q=${encodeURIComponent(query)}`).then(r => r.json());
+// → [{ slug, name, brand, category, category_name, icon, image, lowest_price, currency }, ...]
+```
 
----
+`image` values such as `assets/gpu-rtx.svg` point at files in the frontend repo, so they resolve
+relative to the frontend page. Products without artwork have `image: null`; show the category icon.
+Spec values include a ready-to-render `display` string (`"12 GB"`, `"CL36"`, `"165 Hz"`).
 
-## Attribution and fair use
+The prices match what the static frontend shows today (RTX 4070 from €579, and so on), so swapping
+the hardcoded data for API calls shouldn't change what's on screen.
 
-Parking data is © OpenStreetMap contributors, available under the
-[Open Database License](https://www.openstreetmap.org/copyright). Map tiles come
-from [OpenFreeMap](https://openfreemap.org); search uses
-[Nominatim](https://nominatim.openstreetmap.org). All three are volunteer-funded
-public services — the caching described above isn't just about your free tier,
-it's about not being a burden on them. Put a real contact address in the
-Worker's `CONTACT` variable before you send real traffic, as Nominatim's usage
-policy asks.
+## Configuration
 
----
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | `sqlite:///qompify.db` | Any SQLAlchemy URL — e.g. a hosted database |
+| `CORS_ORIGINS` | `*` | Comma-separated frontend origins allowed to call the API |
+| `AUTO_SEED` | `1` | Create and fill an empty database on startup |
 
-## The earlier version
+To use a hosted database, install its driver and set the URL:
 
-`frontend/` and `backend/` hold the original build — a React + Vite app with a
-Python/FastAPI + PostGIS backend, deployable to Render. It does more (a real
-spatial database, a provider architecture ready for TomTom/HERE, bulk imports),
-at the cost of needing a database and a server. The two-file version above
-replaced it because it's free to run and has nothing to maintain. Delete those
-folders whenever you like — the history keeps them.
+```bash
+pip install "psycopg[binary]"   # PostgreSQL
+export DATABASE_URL="postgresql+psycopg://user:password@host:5432/qompify"
+```
+
+The schema and queries use only portable SQLAlchemy features, but this demo has only been tested
+on SQLite.
+
+**Deploying:** any host that runs Python works (Render, Railway, Fly.io, a VPS). Use
+`uvicorn app.main:app --host 0.0.0.0 --port $PORT` as the start command. On hosts whose disk
+resets between deploys, SQLite simply rebuilds from `data/` on startup; point `DATABASE_URL` at a
+hosted database if you need imported prices to persist.
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+30 tests cover every endpoint, the comparison verdicts, search ranking, feed imports (including
+malformed prices and unmatched items) and rejection of malicious XML.
+
+## Project layout
+
+```
+app/
+  main.py              app setup, CORS, /api/health
+  config.py            settings from environment variables
+  database.py          engine and session
+  models.py            SQL tables
+  schemas.py           JSON response shapes
+  routers/             catalog.py · compare.py · content.py
+  services/            products.py (response building) · scoring.py (comparisons)
+  ingest/              seed.py (demo database) · feeds.py (shop feed import)
+data/
+  catalog.json         categories, products, specs, comparisons, articles
+  feeds/               one XML product feed per shop
+tests/
+```
+
+## About the demo data
+
+Products and specs are modelled on real hardware. The shops (on reserved `.example` domains),
+prices and the 90-day price history are made up. EANs use the 20–29 prefix, which is reserved for
+in-store use, so they can never match a real product's barcode. The API is read-only: there are no
+accounts, carts or payments.
